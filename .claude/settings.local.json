@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest *)",
+      "Bash(rm D:\\\\flux-extension\\\\apps\\\\web)",
+      "Bash(mkdir D:\\\\flux-extension\\\\apps\\\\web)",
+      "Bash(rm D:/flux-extension/apps/web)",
+      "Bash(mkdir D:/flux-extension/apps/web)",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npm run *)",
+      "Bash(curl *)",
+      "Bash(git *)",
+      "Bash(taskkill /f /im \"node.exe\")",
+      "PowerShell(try { Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -ID $_.OwningProcess -Force } } catch {})",
+      "PowerShell(npm run *)",
+      "PowerShell(curl *)",
+      "PowerShell(taskkill *)",
+      "PowerShell(netstat *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(curl.exe -s http://localhost:3000/api/optimize -X POST -H \"Content-Type: application/json\" -d '{\"text\":\"test\",\"mode\":\"developer\",\"level\":\"medium\"}')",
+      "PowerShell(curl.exe -s http://localhost:3000/api/optimize -X POST -H \"Content-Type: application/json\" -d '{\"text\":\"explain how photosynthesis works\",\"mode\":\"general\",\"level\":\"medium\"}')",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(curl -X POST http://localhost:3000/api/optimize -Headers @{\"Content-Type\" = \"application/json\"} -Body \"{\\\\\"text\\\\\":\\\\\"explain how photosynthesis works\\\\\",\\\\\"mode\\\\\":\\\\\"general\\\\\",\\\\\"level\\\\\":\\\\\"medium\\\\\"}\")",
+      "PowerShell(curl -Method POST -Uri http://localhost:3000/api/optimize -Headers @{\"Content-Type\" = \"application/json\"} -Body \"{\\\\\"text\\\\\":\\\\\"explain how photosynthesis works\\\\\",\\\\\"mode\\\\\":\\\\\"general\\\\\",\\\\\"level\\\\\":\\\\\"medium\\\\\"}\")",
+      "PowerShell(curl -Method POST -Uri http://localhost:3000/api/optimize -Headers @{\"Content-Type\" = \"application/json\"} -Body '{\"text\":\"explain how photosynthesis works\",\"mode\":\"general\",\"level\":\"medium\"}')",
+      "Bash(taskkill *)",
+      "WebSearch",
+      "WebFetch(domain:antigravity.google)",
+      "WebFetch(domain:www.antigravityide.app)",
+      "WebFetch(domain:codelabs.developers.google.com)"
+    ]
+  }
+}

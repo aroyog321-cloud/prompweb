@@ -1,0 +1,311 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@400;500;600&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :host {
+    all: initial;
+    font-family: "Geist", "Inter", -apple-system, sans-serif;
+    color-scheme: dark;
+    
+    /* Next-Level Ultra Minimal Variables */
+    --surface-base: rgba(0, 0, 0, 0.85);
+    --surface-elevated: rgba(10, 10, 10, 0.95);
+    --surface-floating: rgba(17, 17, 17, 1);
+    
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    
+    --text-primary: #EDEDED;
+    --text-secondary: #888888;
+    --text-tertiary: #555555;
+    
+    --accent-color: #EDEDED;
+    --accent-bg: #FFFFFF;
+    --accent-fg: #000000;
+  }
+}
+
+/* Base resets inside shadow DOM */
+* {
+  box-sizing: border-box;
+}
+
+/* Custom Scrollbar - Ultra minimal */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* 
+  The Orb
+  Ultra-sleek, monochromatic ring 
+*/
+.flux-orb {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: var(--surface-base);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.flux-orb.compact {
+  width: 28px;
+  height: 28px;
+}
+
+.flux-orb.compact svg {
+  width: 14px;
+  height: 14px;
+}
+
+.flux-orb:hover {
+  transform: scale(1.05);
+  border-color: var(--border-strong);
+  background: var(--surface-elevated);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+
+.flux-orb:active {
+  transform: scale(0.95);
+}
+
+.flux-orb:focus-visible {
+  outline: 2px solid var(--text-tertiary);
+  outline-offset: 2px;
+}
+
+.flux-orb-active {
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+  border-color: transparent;
+}
+
+.flux-orb.flux-loading svg {
+  animation: flux-spin 1s linear infinite;
+}
+
+@keyframes flux-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 
+  Panel Container
+  Deep dark with ultra-thin border
+*/
+.flux-panel {
+  font-family: "Geist", "Inter", sans-serif;
+}
+
+.flux-panel ::selection {
+  background: rgba(255,255,255,0.15);
+}
+
+.flux-panel-wrapper {
+  background: var(--surface-base);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Header */
+.flux-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(0, 0, 0, 0.2);
+  cursor: grab;
+}
+
+.flux-header:active {
+  cursor: grabbing;
+}
+
+/* Select Inputs */
+.flux-select {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.flux-select:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.flux-select:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.flux-select option {
+  color: #000;
+}
+
+/* Primary Action Button (Monochrome Invert) */
+.flux-btn-primary {
+  flex: 1;
+  background: var(--text-primary);
+  color: var(--surface-base);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.flux-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.flux-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.flux-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Secondary Button */
+.flux-btn-secondary {
+  flex: 1;
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.flux-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-strong);
+}
+
+.flux-btn-secondary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Icon Buttons */
+.flux-btn-icon {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.flux-btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+/* Textarea */
+.flux-textarea {
+  width: 100%;
+  min-height: 180px;
+  font-size: 13px;
+  font-family: "Geist", "Inter", sans-serif;
+  line-height: 1.6;
+  resize: vertical;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* Loading/Shimmer Effects */
+@keyframes panelSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.flux-panel-animate-in {
+  animation: panelSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.flux-shimmer-text {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  color: var(--text-secondary);
+}
+
+.flux-skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

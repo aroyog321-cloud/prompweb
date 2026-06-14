@@ -1,0 +1,63 @@
+{
+  "manifest_version": 3,
+  "name": "Flux Prompt Optimizer",
+  "description": "Optimize your prompts for AI platforms like ChatGPT, Gemini, Claude, and more",
+  "version": "1.0.0",
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "*://*.chatgpt.com/*",
+    "*://*.gemini.google.com/*",
+    "*://*.claude.ai/*",
+    "*://*.perplexity.ai/*",
+    "*://*.grok.com/*",
+    "*://*.deepseek.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.chatgpt.com/*",
+        "*://*.gemini.google.com/*",
+        "*://*.claude.ai/*",
+        "*://*.perplexity.ai/*",
+        "*://*.grok.com/*",
+        "*://*.deepseek.com/*"
+      ],
+      "js": ["contentScript.js"],
+      "css": ["contentStyle.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["popup.html", "popup.js", "popup.css", "optimizeWorker.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

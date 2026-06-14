@@ -1,0 +1,150 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface-base: #000000;
+  --surface-elevated: #0A0A0A;
+  --surface-floating: #111111;
+  --border-subtle: #222222;
+  --border-strong: #333333;
+  --text-primary: #EDEDED;
+  --text-secondary: #888888;
+  --text-tertiary: #555555;
+  --accent-color: #EDEDED;
+}
+
+html,
+body,
+#root {
+  width: 380px;
+  min-height: 480px;
+}
+
+body {
+  font-family: "Geist", "Inter", -apple-system, sans-serif;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: "Geist", "Inter", sans-serif;
+  letter-spacing: -0.02em;
+}
+
+/* Custom Scrollbar - Ultra minimal */
+::-webkit-scrollbar, .custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track, .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb, .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover, .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+@layer utilities {
+  .animate-in {
+    animation-duration: 300ms;
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: forwards;
+  }
+  .fade-in {
+    animation-name: fadeIn;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer components {
+  .flux-card {
+    @apply rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)];
+  }
+
+  .input,
+  .select {
+    @apply w-full rounded-md border border-[var(--border-subtle)] bg-[var(--surface-floating)] px-3 py-2 text-[13px] text-[var(--text-primary)] outline-none transition-all duration-200;
+  }
+  
+  .input:hover,
+  .select:hover {
+    @apply border-[var(--border-strong)];
+  }
+  
+  .input:focus-visible,
+  .select:focus-visible {
+    @apply border-[var(--text-tertiary)];
+  }
+  
+  .select option {
+    color: #000000;
+  }
+}
+
+/* Tooltip styles */
+.tooltip-icon {
+  position: relative;
+  display: inline-block;
+  margin-left: 6px;
+  cursor: help;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+
+.tooltip-icon:hover {
+  color: var(--text-primary);
+}
+
+.tooltip-icon::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface-floating);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  transform: translateX(-50%) translateY(-5px);
+  z-index: 1000;
+}
+
+.tooltip-icon:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Divider */
+.minimal-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  width: 100%;
+}
