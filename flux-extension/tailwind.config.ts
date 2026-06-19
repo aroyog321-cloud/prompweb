@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        flux: {
+        promptly: {
           void: "#0B0B12",
           surface: "rgba(255,255,255,0.05)",
           border: "rgba(255,255,255,0.10)",
@@ -22,8 +22,8 @@ export default {
         mono: ["JetBrains Mono", "monospace"]
       },
       backgroundImage: {
-        "flux-ring": "conic-gradient(from 180deg, #4FE6E0, #8B6CFF, #FF5FB8, #4FE6E0)",
-        "flux-glow": "radial-gradient(circle at 30% 30%, rgba(139,108,255,0.35), transparent 60%)"
+        "promptly-ring": "conic-gradient(from 180deg, #4FE6E0, #8B6CFF, #FF5FB8, #4FE6E0)",
+        "promptly-glow": "radial-gradient(circle at 30% 30%, rgba(139,108,255,0.35), transparent 60%)"
       },
       boxShadow: {
         glass: "0 8px 32px rgba(0,0,0,0.35)"

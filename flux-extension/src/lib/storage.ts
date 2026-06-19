@@ -1,16 +1,16 @@
-import { DEFAULT_SETTINGS, FluxSettings } from "./types";
+import { DEFAULT_SETTINGS, PromptlySettings } from '@promptly/types';
 
-const STORAGE_KEY = "flux_settings_v1";
+const STORAGE_KEY = "promptly_settings_v1";
 
-export async function getSettings(): Promise<FluxSettings> {
+export async function getSettings(): Promise<PromptlySettings> {
   const result = await chrome.storage.sync.get(STORAGE_KEY);
-  const stored = result[STORAGE_KEY] as Partial<FluxSettings> | undefined;
+  const stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
   return { ...DEFAULT_SETTINGS, ...stored, contextProfile: { ...DEFAULT_SETTINGS.contextProfile, ...(stored?.contextProfile ?? {}) } };
 }
 
-export async function setSettings(partial: Partial<FluxSettings>): Promise<FluxSettings> {
+export async function setSettings(partial: Partial<PromptlySettings>): Promise<PromptlySettings> {
   const current = await getSettings();
-  const next: FluxSettings = {
+  const next: PromptlySettings = {
     ...current,
     ...partial,
     contextProfile: { ...current.contextProfile, ...(partial.contextProfile ?? {}) }
@@ -19,7 +19,7 @@ export async function setSettings(partial: Partial<FluxSettings>): Promise<FluxS
   return next;
 }
 
-export function onSettingsChanged(callback: (settings: FluxSettings) => void) {
+export function onSettingsChanged(callback: (settings: PromptlySettings) => void) {
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === "sync" && changes[STORAGE_KEY]) {
       const newValue = changes[STORAGE_KEY].newValue;

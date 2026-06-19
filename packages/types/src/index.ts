@@ -1,4 +1,5 @@
 export type PromptMode =
+  | "auto"
   | "general"
   | "developer"
   | "designer"
@@ -10,7 +11,10 @@ export type PromptMode =
 
 export type RewriteLevel = "light" | "medium" | "aggressive" | "expert";
 
+export type PromptStyle = "neutral" | "formal" | "conversational" | "academic" | "creative" | "direct";
+
 export const PROMPT_MODES: { value: PromptMode; label: string }[] = [
+  { value: "auto", label: "Auto-Detect" },
   { value: "general", label: "General" },
   { value: "developer", label: "Developer" },
   { value: "designer", label: "Designer" },
@@ -28,6 +32,15 @@ export const REWRITE_LEVELS: { value: RewriteLevel; label: string; description: 
   { value: "expert", label: "Expert", description: "Maximum detail, constraints, and output spec" }
 ];
 
+export const PROMPT_STYLES: { value: PromptStyle; label: string; description: string }[] = [
+  { value: "neutral", label: "Neutral", description: "Balanced and objective tone" },
+  { value: "formal", label: "Formal", description: "Professional and authoritative tone" },
+  { value: "conversational", label: "Conversational", description: "Friendly and approachable tone" },
+  { value: "academic", label: "Academic", description: "Scholarly and rigorous tone" },
+  { value: "creative", label: "Creative", description: "Imaginative and expressive tone" },
+  { value: "direct", label: "Direct", description: "Concise and no-nonsense tone" }
+];
+
 export interface ContextProfile {
   companyName?: string;
   brandTone?: string;
@@ -37,24 +50,32 @@ export interface ContextProfile {
   writingStyle?: string;
 }
 
-export interface FluxSettings {
+export interface PromptlySettings {
   theme: "dark" | "light" | "system";
   defaultMode: PromptMode;
   defaultLevel: RewriteLevel;
+  defaultStyle: PromptStyle;
   shortcutEnabled: boolean;
   apiBaseUrl: string;
   apiKey?: string;
+  categorizerApiUrl?: string;
+  categorizerApiKey?: string;
+  accessToken?: string;
   contextProfile: ContextProfile;
   contextInjectionEnabled: boolean;
 }
 
-export const DEFAULT_SETTINGS: FluxSettings = {
+export const DEFAULT_SETTINGS: PromptlySettings = {
   theme: "dark",
   defaultMode: "general",
   defaultLevel: "medium",
+  defaultStyle: "neutral",
   shortcutEnabled: true,
   apiBaseUrl: "http://localhost:3000",
   apiKey: "",
+  categorizerApiUrl: "",
+  categorizerApiKey: "",
+  accessToken: "",
   contextProfile: {},
   contextInjectionEnabled: false
 };
@@ -63,10 +84,32 @@ export interface OptimizeRequest {
   text: string;
   mode: PromptMode;
   level: RewriteLevel;
+  style: PromptStyle;
   context?: ContextProfile;
+  stream?: boolean;
+  refinement?: string;
+  previousPrompt?: string;
+  platform?: string;
 }
 
 export interface OptimizeResponse {
   optimized: string;
   source: "api" | "local-fallback";
+}
+
+export type SubscriptionTier = "free" | "pro" | "expert";
+
+export interface UserProfile {
+  id: string;
+  email?: string;
+  tier: SubscriptionTier;
+  createdAt: string;
+}
+
+export interface UserUsage {
+  userId: string;
+  date: string; // YYYY-MM-DD
+  totalRequests: number;
+  aggressiveExpertRequests: number;
+  regenerations: number;
 }

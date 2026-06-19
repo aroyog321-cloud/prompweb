@@ -116,9 +116,14 @@ export function writeInputText(el: HTMLElement, text: string): void {
 
   // contenteditable: clear then insert via execCommand for max compatibility
   el.focus();
+  // Normalize consecutive newlines for contenteditable elements. Modern rich-text editors
+  // (like Lexical on ChatGPT or ProseMirror on Claude) treat \n as a block/paragraph break.
+  // Double newlines (\n\n) get doubled or expanded into massive blank paragraph gaps.
+  const normalizedText = text.replace(/\r\n/g, "\n").replace(/\n\n+/g, "\n");
+
   document.execCommand("selectAll", false);
   document.execCommand("delete", false);
-  document.execCommand("insertText", false, text);
+  document.execCommand("insertText", false, normalizedText);
   el.dispatchEvent(new Event("input", { bubbles: true }));
 
   // move cursor to end

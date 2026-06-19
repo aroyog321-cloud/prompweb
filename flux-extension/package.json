@@ -1,5 +1,5 @@
 {
-  "name": "flux-prompt-optimizer",
+  "name": "promptly-prompt-optimizer",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -9,10 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@promptly/prompt-engine": "*",
+    "@promptly/types": "*",
+    "@supabase/supabase-js": "^2.108.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zustand": "^4.5.2",
-    "zod": "^3.23.8"
+    "zod": "^3.23.8",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",

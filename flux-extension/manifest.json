@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Flux Prompt Optimizer",
-  "short_name": "Flux",
+  "name": "Promptly Prompt Optimizer",
+  "short_name": "Promptly",
   "version": "0.1.0",
   "description": "Turn rough instructions into expert-level prompts, right inside ChatGPT, Claude, Gemini, Perplexity, Grok and DeepSeek.",
   "icons": {
@@ -45,6 +45,15 @@
       "js": ["src/content/index.tsx"],
       "run_at": "document_idle",
       "all_frames": false
+    },
+    {
+      "matches": [
+        "http://localhost:3000/*",
+        "http://127.0.0.1:3000/*",
+        "https://*.vercel.app/*"
+      ],
+      "js": ["src/content/authSync.ts"],
+      "run_at": "document_start"
     }
   ],
   "commands": {
@@ -53,12 +62,12 @@
         "default": "Ctrl+Shift+P",
         "mac": "Command+Shift+P"
       },
-      "description": "Optimize the current prompt with Flux"
+      "description": "Optimize the current prompt with Promptly"
     }
   },
   "web_accessible_resources": [
     {
-      "resources": ["public/icons/*"],
+      "resources": ["public/icons/*", "public/promptly-orb.png"],
       "matches": ["<all_urls>"]
     }
   ]

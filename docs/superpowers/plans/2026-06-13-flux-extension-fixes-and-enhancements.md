@@ -1,8 +1,8 @@
-# Flux Prompt Optimizer - Positioning Fix and UI/UX Enhancements Implementation Plan
+# Promptly Prompt Optimizer - Positioning Fix and UI/UX Enhancements Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix the dialog box going out of screen issue and implement next-level UI/UX enhancements for the Flux Prompt Optimizer Chrome extension.
+**Goal:** Fix the dialog box going out of screen issue and implement next-level UI/UX enhancements for the Promptly Prompt Optimizer Chrome extension.
 
 **Architecture:** 
 - Fix positioning logic in content script to ensure panel stays within viewport boundaries
@@ -25,7 +25,7 @@
 ### Task 1: Analyze Current Positioning Logic
 
 **Files:**
-- Read: `flux-extension/src/content/index.tsx`
+- Read: `promptly-extension/src/content/index.tsx`
 
 - [ ] **Step 1: Examine current positioning implementation**
 
@@ -37,7 +37,7 @@
 
 - [ ] **Step 2: Run extension to reproduce issue**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: Extension loads in Chrome, orb positions correctly, but panel overflows when near screen edges
 
 - [ ] **Step 3: Document specific overflow scenarios**
@@ -53,14 +53,14 @@ Scenarios where overflow occurs:
 - [ ] **Step 4: Commit analysis**
 
 ```bash
-git add docs/superpowers/plans/2026-06-13-flux-extension-fixes-and-enhancements.md
-git commit -m "docs: analyze positioning issue for Flux extension"
+git add docs/superpowers/plans/2026-06-13-promptly-extension-fixes-and-enhancements.md
+git commit -m "docs: analyze positioning issue for Promptly extension"
 ```
 
 ### Task 2: Implement Enhanced Boundary Detection for Positioning
 
 **Files:**
-- Modify: `flux-extension/src/content/index.tsx`
+- Modify: `promptly-extension/src/content/index.tsx`
 
 - [ ] **Step 1: Add panel position state**
 
@@ -172,14 +172,14 @@ const update = () => {
 
 - [ ] **Step 4: Test the fix**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: Orb positions correctly, panel never overflows viewport in any scenario
 
 - [ ] **Step 5: Commit fix**
 
 ```bash
-git add flux-extension/src/content/index.tsx
-git commit -m "fix: implement boundary-aware positioning for Flux extension panel"
+git add promptly-extension/src/content/index.tsx
+git commit -m "fix: implement boundary-aware positioning for Promptly extension panel"
 ```
 
 ## Phase 2: Visual & Usability Improvements
@@ -187,14 +187,14 @@ git commit -m "fix: implement boundary-aware positioning for Flux extension pane
 ### Task 3: Enhance Visual Design with Glassmorphism
 
 **Files:**
-- Modify: `flux-extension/src/content/content.css`
-- Modify: `flux-extension/src/content/OptimizerPanel.tsx`
+- Modify: `promptly-extension/src/content/content.css`
+- Modify: `promptly-extension/src/content/OptimizerPanel.tsx`
 
 - [ ] **Step 1: Update CSS variables for enhanced glassmorphism**
 
 ```css
 /* Add to content.css */
-.flux-panel {
+.promptly-panel {
   background: rgba(15, 15, 22, 0.7) !important; /* More transparent */
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
@@ -210,7 +210,7 @@ git commit -m "fix: implement boundary-aware positioning for Flux extension pane
   100% { background-position: 0% 50%; }
 }
 
-.flux-panel:hover {
+.promptly-panel:hover {
   background: rgba(15, 15, 22, 0.75) !important;
   animation: gradientShift 8s ease infinite;
 }
@@ -221,7 +221,7 @@ git commit -m "fix: implement boundary-aware positioning for Flux extension pane
 ```typescript
 // In OptimizerPanel.tsx, update the main div style
 <div
-  className="flux-panel"
+  className="promptly-panel"
   style={{
     width: 380,
     maxWidth: "90vw",
@@ -271,20 +271,20 @@ const primaryButtonStyle: React.CSSProperties = {
 
 - [ ] **Step 4: Test visual enhancements**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: Panel has enhanced glassmorphism effect, subtle animations on hover
 
 - [ ] **Step 5: Commit visual improvements**
 
 ```bash
-git add flux-extension/src/content/content.css flux-extension/src/content/OptimizerPanel.tsx
+git add promptly-extension/src/content/content.css promptly-extension/src/content/OptimizerPanel.tsx
 git commit -m "style: enhance glassmorphism and visual effects"
 ```
 
 ### Task 4: Implement Keyboard Navigation and Accessibility
 
 **Files:**
-- Modify: `flux-extension/src/content/OptimizerPanel.tsx`
+- Modify: `promptly-extension/src/content/OptimizerPanel.tsx`
 
 - [ ] **Step 1: Add keyboard event handlers**
 
@@ -334,10 +334,10 @@ interface OptimizerPanelProps {
 
 // Update the main div
 <div
-  className="flux-panel"
+  className="promptly-panel"
   role="dialog"
   "aria-modal"="true"
-  "aria-labelledby"="flux-panel-title"
+  "aria-labelledby"="promptly-panel-title"
   // ... existing styles
 >
 ```
@@ -398,7 +398,7 @@ React.useEffect(() => {
 
 - [ ] **Step 4: Test keyboard navigation**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: 
 - ESC closes panel
 - Ctrl/Cmd+Enter replaces text
@@ -409,21 +409,21 @@ Expected:
 - [ ] **Step 5: Commit accessibility improvements**
 
 ```bash
-git add flux-extension/src/content/OptimizerPanel.tsx
+git add promptly-extension/src/content/OptimizerPanel.tsx
 git commit -m "feat: add keyboard navigation and accessibility improvements"
 ```
 
 ### Task 5: Implement Position Memory Feature
 
 **Files:**
-- Modify: `flux-extension/src/lib/storage.ts`
-- Modify: `flux-extension/src/content/index.tsx`
+- Modify: `promptly-extension/src/lib/storage.ts`
+- Modify: `promptly-extension/src/content/index.tsx`
 
 - [ ] **Step 1: Extend settings interface for position memory**
 
 ```typescript
-// In storage.ts, update FluxSettings interface
-export interface FluxSettings {
+// In storage.ts, update PromptlySettings interface
+export interface PromptlySettings {
   theme: "dark" | "light" | "system";
   defaultMode: PromptMode;
   defaultLevel: RewriteLevel;
@@ -441,7 +441,7 @@ export interface FluxSettings {
 - [ ] **Step 2: Update DEFAULT_SETTINGS**
 
 ```typescript
-export const DEFAULT_SETTINGS: FluxSettings = {
+export const DEFAULT_SETTINGS: PromptlySettings = {
   theme: "dark",
   defaultMode: "general",
   defaultLevel: "medium",
@@ -459,9 +459,9 @@ export const DEFAULT_SETTINGS: FluxSettings = {
 
 ```typescript
 // In getSettings function
-export async function getSettings(): Promise<FluxSettings> {
+export async function getSettings(): Promise<PromptlySettings> {
   const result = await chrome.storage.sync.get(STORAGE_KEY);
-  const stored = result[STORAGE_KEY] as Partial<FluxSettings> | undefined;
+  const stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
   return { 
     ...DEFAULT_SETTINGS, 
     ...stored, 
@@ -477,9 +477,9 @@ export async function getSettings(): Promise<FluxSettings> {
 }
 
 // In setSettings function
-export async function setSettings(partial: Partial<FluxSettings>): Promise<FluxSettings> {
+export async function setSettings(partial: Partial<PromptlySettings>): Promise<PromptlySettings> {
   const current = await getSettings();
-  const next: FluxSettings = {
+  const next: PromptlySettings = {
     ...current,
     ...partial,
     contextProfile: { 
@@ -522,8 +522,8 @@ React.useEffect(() => {
     if (panelPosition) {
       // Save current position
       chrome.storage.sync.get(STORAGE_KEY, (result) => {
-        const stored = result[STORAGE_KEY] as Partial<FluxSettings> | undefined;
-        const updatedSettings: FluxSettings = {
+        const stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
+        const updatedSettings: PromptlySettings = {
           ...DEFAULT_SETTINGS,
           ...(stored ?? {}),
           panelPositions: {
@@ -546,7 +546,7 @@ React.useEffect(() => {
 
 - [ ] **Step 5: Test position memory**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: 
 - Panel position is saved per hostname
 - Panel opens in last used position on same site
@@ -556,7 +556,7 @@ Expected:
 - [ ] **Step 6: Commit position memory feature**
 
 ```bash
-git add flux-extension/src/lib/storage.ts flux-extension/src/content/index.tsx
+git add promptly-extension/src/lib/storage.ts promptly-extension/src/content/index.tsx
 git commit -m "feat: implement panel position memory per hostname"
 ```
 
@@ -565,15 +565,15 @@ git commit -m "feat: implement panel position memory per hostname"
 ### Task 6: Add History Panel
 
 **Files:**
-- Create: `flux-extension/src/content/HistoryPanel.tsx`
-- Modify: `flux-extension/src/content/index.tsx`
-- Modify: `flux-extension/src/lib/storage.ts`
+- Create: `promptly-extension/src/content/HistoryPanel.tsx`
+- Modify: `promptly-extension/src/content/index.tsx`
+- Modify: `promptly-extension/src/lib/storage.ts`
 
 - [ ] **Step 1: Extend settings for history storage**
 
 ```typescript
-// In storage.ts, add to FluxSettings
-export interface FluxSettings {
+// In storage.ts, add to PromptlySettings
+export interface PromptlySettings {
   // ... existing fields
   maxHistoryItems: number; // Default 50
   historyEnabled: boolean; // Default true
@@ -583,7 +583,7 @@ export interface FluxSettings {
 - [ ] **Step 2: Update DEFAULT_SETTINGS**
 
 ```typescript
-export const DEFAULT_SETTINGS: FluxSettings = {
+export const DEFAULT_SETTINGS: PromptlySettings = {
   // ... existing fields
   maxHistoryItems: 50,
   historyEnabled: true
@@ -593,12 +593,12 @@ export const DEFAULT_SETTINGS: FluxSettings = {
 - [ ] **Step 3: Create HistoryPanel component**
 
 ```typescript
-// Create flux-extension/src/content/HistoryPanel.tsx
+// Create promptly-extension/src/content/HistoryPanel.tsx
 import React, { useState, useEffect } from "react";
-import { FluxSettings } from "../lib/types";
+import { PromptlySettings } from "../lib/types";
 
 interface HistoryPanelProps {
-  settings: FluxSettings;
+  settings: PromptlySettings;
   onClose: () => void;
   onUseHistoryItem: (text: string) => void;
 }
@@ -617,8 +617,8 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
 
   useEffect(() => {
     // Load history from storage
-    chrome.storage.sync.get(["flux_history_v1"], (result) => {
-      const history = result["flux_history_v1"] as Array<{ 
+    chrome.storage.sync.get(["promptly_history_v1"], (result) => {
+      const history = result["promptly_history_v1"] as Array<{ 
         id: string; 
         original: string; 
         optimized: string; 
@@ -646,13 +646,13 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
     
     // Save to storage
     chrome.storage.sync.set({
-      "flux_history_v1": [...historyItems, newItem].slice(0, settings.maxHistoryItems)
+      "promptly_history_v1": [...historyItems, newItem].slice(0, settings.maxHistoryItems)
     });
   };
 
   return (
     <div
-      className="flux-panel"
+      className="promptly-panel"
       style={{
         width: 380,
         maxWidth: "90vw",
@@ -681,7 +681,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
             }}
           />
           <span style={{ fontFamily: "Space Grotesk, sans-serif", fontSize: 14, fontWeight: 600, letterSpacing: 0.2 }}>
-            Flux History
+            Promptly History
           </span>
         </div>
         <button
@@ -751,7 +751,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
             onClick={() => {
               // Clear history
               setHistoryItems([]);
-              chrome.storage.sync.remove(["flux_history_v1"]);
+              chrome.storage.sync.remove(["promptly_history_v1"]);
             }}
             style={{
               flex: 1,
@@ -810,7 +810,7 @@ const closeHistory = () => setHistoryOpen(false);
 
 - [ ] **Step 5: Test history panel**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: 
 - History panel opens/closes correctly
 - Optimization results are saved to history
@@ -821,16 +821,16 @@ Expected:
 - [ ] **Step 6: Commit history panel feature**
 
 ```bash
-git add flux-extension/src/lib/storage.ts flux-extension/src/content/HistoryPanel.tsx flux-extension/src/content/index.tsx
+git add promptly-extension/src/lib/storage.ts promptly-extension/src/content/HistoryPanel.tsx promptly-extension/src/content/index.tsx
 git commit -m "feat: add history panel for tracking optimization results"
 ```
 
 ### Task 7: Implement Performance Optimizations
 
 **Files:**
-- Modify: `flux-extension/src/lib/promptEngine.ts`
-- Modify: `flux-extension/src/content/index.tsx`
-- Modify: `flux-extension/src/content/OptimizerPanel.tsx`
+- Modify: `promptly-extension/src/lib/promptEngine.ts`
+- Modify: `promptly-extension/src/content/index.tsx`
+- Modify: `promptly-extension/src/content/OptimizerPanel.tsx`
 
 - [ ] **Step 1: Add request debouncing to prompt engine**
 
@@ -958,7 +958,7 @@ const runOptimize = React.useCallback(async () => {
 
 - [ ] **Step 5: Test performance improvements**
 
-Run: `cd flux-extension && npm run dev`
+Run: `cd promptly-extension && npm run dev`
 Expected: 
 - Rapid typing doesn't trigger excessive API calls (debouncing works)
 - Repeated optimizations return instantly from cache
@@ -968,7 +968,7 @@ Expected:
 - [ ] **Step 6: Commit performance optimizations**
 
 ```bash
-git add flux-extension/src/lib/promptEngine.ts flux-extension/src/content/OptimizerPanel.tsx
+git add promptly-extension/src/lib/promptEngine.ts promptly-extension/src/content/OptimizerPanel.tsx
 git commit -m "perf: add debouncing and caching for optimization requests"
 ```
 
@@ -1035,7 +1035,7 @@ git commit -m "fix: description of issue resolved"
 
 - [ ] **Step 6: Final integration test**
 
-Run: `cd flux-extension && npm run build`
+Run: `cd promptly-extension && npm run build`
 Expected: Successful build with no errors
 
 Run: `cd apps/web && npm run build` 
@@ -1051,15 +1051,15 @@ git commit -m "test: comprehensive testing completed and all issues resolved"
 ### Task 9: Prepare for Release
 
 **Files:**
-- Modify: `flux-extension/package.json` (if version bump needed)
-- Modify: `flux-extension/README.md` (update documentation)
-- Create: `flux-extension/CHANGELOG.md`
+- Modify: `promptly-extension/package.json` (if version bump needed)
+- Modify: `promptly-extension/README.md` (update documentation)
+- Create: `promptly-extension/CHANGELOG.md`
 
 - [ ] **Step 1: Update version in package.json**
 
 ```json
 {
-  "name": "flux-prompt-optimizer",
+  "name": "promptly-prompt-optimizer",
   "private": true,
   "version": "0.2.0", // Bump from 0.1.0
   // ... rest unchanged
@@ -1069,7 +1069,7 @@ git commit -m "test: comprehensive testing completed and all issues resolved"
 - [ ] **Step 2: Update README with new features**
 
 ```markdown
-# Flux Prompt Optimizer
+# Promptly Prompt Optimizer
 
 ## New in v0.2.0
 
@@ -1115,7 +1115,7 @@ git commit -m "test: comprehensive testing completed and all issues resolved"
 - [ ] **Step 4: Commit release preparation**
 
 ```bash
-git add flux-extension/package.json flux-extension/README.md flux-extension/CHANGELOG.md
+git add promptly-extension/package.json promptly-extension/README.md promptly-extension/CHANGELOG.md
 git commit -m "release: prepare v0.2.0 release with all enhancements"
 ```
 

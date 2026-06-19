@@ -1,4 +1,4 @@
-# Flux Prompt Optimizer — Browser Extension
+# Promptly Prompt Optimizer — Browser Extension
 
 A Chrome (Manifest V3) extension that injects a floating "Optimize Prompt"
 orb next to the chat input on ChatGPT, Gemini, Claude, Perplexity, Grok, and
@@ -15,7 +15,7 @@ replaces it in place.
 ## Project layout
 
 ```
-flux-extension/
+promptly-extension/
 ├── manifest.json              # MV3 manifest (content scripts, commands, permissions)
 ├── index.html                 # Popup entry
 ├── src/
@@ -27,7 +27,7 @@ flux-extension/
 │   │   └── content.css         # Tailwind source, injected into the shadow root
 │   ├── lib/
 │   │   ├── platforms.ts        # Config-driven registry of supported AI sites
-│   │   ├── promptEngine.ts     # optimizePrompt() — calls Flux API, falls back to local pipeline
+│   │   ├── promptEngine.ts     # optimizePrompt() — calls Promptly API, falls back to local pipeline
 │   │   ├── storage.ts          # chrome.storage.sync wrapper for settings
 │   │   └── types.ts            # Shared types: modes, levels, settings, context profile
 │   └── popup/
@@ -65,7 +65,7 @@ color. Also add the hostname to `manifest.json` under `host_permissions` and
 
 `optimizePrompt()` in `src/lib/promptEngine.ts`:
 
-1. If `apiBaseUrl` + `apiKey` are set (Flux account connected), it POSTs to
+1. If `apiBaseUrl` + `apiKey` are set (Promptly account connected), it POSTs to
    `${apiBaseUrl}/v1/optimize` with `{ text, mode, level, context }` and the
    system prompt defined in `SYSTEM_PROMPT`. This is where the real
    LLM-backed optimization (Intent Detection → Context Expansion → Goal
@@ -87,7 +87,7 @@ user's signed-in Chrome profile:
 - Default mode / rewrite level
 - Context profile (company, industry, audience, brand tone, writing style,
   website) — optionally injected into every optimization
-- Flux API base URL + key (falls back to local pipeline if empty)
+- Promptly API base URL + key (falls back to local pipeline if empty)
 
 ## Development
 
@@ -104,7 +104,7 @@ npm run build   # Production build → dist/
 3. Enable **Developer mode**
 4. **Load unpacked** → select the `dist/` folder
 5. Visit chatgpt.com, claude.ai, gemini.google.com, perplexity.ai, grok.com,
-   or chat.deepseek.com — the Flux orb should appear beside the chat input.
+   or chat.deepseek.com — the Promptly orb should appear beside the chat input.
    Click it, or press `Ctrl+Shift+P`, to optimize.
 
 ## Known gaps / next steps

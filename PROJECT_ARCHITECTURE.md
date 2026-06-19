@@ -1,7 +1,7 @@
-# Flux Prompt Optimizer - Project Architecture
+# Promptly Prompt Optimizer - Project Architecture
 
 ## Overview
-Flux Prompt Optimizer is a universal AI layer that works as a browser extension and SaaS platform. It optimizes user prompts for various AI platforms (ChatGPT, Gemini, Claude, etc.) and provides a dashboard for managing prompts, templates, and usage analytics.
+Promptly Prompt Optimizer is a universal AI layer that works as a browser extension and SaaS platform. It optimizes user prompts for various AI platforms (ChatGPT, Gemini, Claude, etc.) and provides a dashboard for managing prompts, templates, and usage analytics.
 
 ## Tech Stack
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, Framer Motion, shadcn/ui
@@ -18,7 +18,7 @@ Flux Prompt Optimizer is a universal AI layer that works as a browser extension 
 
 ## Folder Structure
 ```
-flux-prompt-optimizer/
+promptly-prompt-optimizer/
 ├── apps/
 │   ├── extension/          # Chrome Extension (Vite + React + TS)
 │   └── web/                # Next.js Web Application (Dashboard + Marketing)
@@ -53,7 +53,7 @@ flux-prompt-optimizer/
 - **Dashboard**: Prompt history, saved prompts, templates, analytics
 - **Marketing Pages**: Landing, features, pricing, docs
 - **API Routes**: Backend endpoints for data operations
-- **Components**: Reusable UI elements from `@flux/ui`
+- **Components**: Reusable UI elements from `@promptly/ui`
 - **Styles**: Tailwind CSS with custom theme
 
 ### 3. Shared Packages (`packages/`)
@@ -67,7 +67,7 @@ flux-prompt-optimizer/
 - Shared React components (buttons, inputs, modals, etc.)
 - Built with shadcn/ui primitives and Tailwind
 - Theme-aware (light/dark mode)
-- Exportable as `@flux/ui`
+- Exportable as `@promptly/ui`
 
 #### `db`
 - Prisma schema definition

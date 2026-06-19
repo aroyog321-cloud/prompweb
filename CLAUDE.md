@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-### Extension (flux-extension)
+### Extension (promptly-extension)
 - `npm run dev` - Start Vite dev server for the Chrome extension (serves at http://localhost:5173)
 - `npm run build` - Build the extension for production (output to dist/)
 - `npm run preview` - Preview the built extension locally
@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Code Architecture
 
-### Chrome Extension (flux-extension)
+### Chrome Extension (promptly-extension)
 - **Manifest V3**: Configured in `manifest.json` (processed by @crxjs/vite-plugin)
 - **Content Script**: `src/content/index.tsx` - React app injected into target websites via shadow DOM
 - **Background Service Worker**: `service-worker-loader.js` (generated) - handles extension lifecycle and commands
@@ -47,10 +47,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Workflow
 1. Start both dev servers: 
-   - In one terminal: `cd flux-extension && npm run dev`
+   - In one terminal: `cd promptly-extension && npm run dev`
    - In another: `cd apps/web && npm run dev`
-2. Load the unpacked extension from `flux-extension/dist` in Chrome (chrome://extensions → Load unpacked).
-3. Visit a supported AI site (chatgpt.com, claude.ai, etc.) to see the Flux orb.
+2. Load the unpacked extension from `promptly-extension/dist` in Chrome (chrome://extensions → Load unpacked).
+3. Visit a supported AI site (chatgpt.com, claude.ai, etc.) to see the Promptly orb.
 4. Click orb to open optimizer panel; it will call the local API at `http://localhost:3000/api/optimize`.
 5. Optimized prompts are returned via Gemini API (if key valid) or local fallback.
 

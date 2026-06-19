@@ -77,7 +77,7 @@ h3,
 }
 
 @layer components {
-  .flux-card {
+  .promptly-card {
     @apply rounded-xl bg-[var(--surface-elevated)] border border-[var(--border-subtle)];
   }
 

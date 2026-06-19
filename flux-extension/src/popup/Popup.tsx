@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useId } from "react";
 import { getSettings, setSettings as persistSettings } from "../lib/storage";
-import { ContextProfile, FluxSettings, PROMPT_MODES, REWRITE_LEVELS, PromptMode, RewriteLevel } from "../lib/types";
+import { ContextProfile, PromptlySettings, PROMPT_MODES, REWRITE_LEVELS, PromptMode, RewriteLevel } from '@promptly/types';
 
 export const Popup: React.FC = () => {
-  const [settings, setSettings] = useState<FluxSettings | null>(null);
+  const [settings, setSettings] = useState<PromptlySettings | null>(null);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'context' | 'account'>('general');
 
@@ -11,7 +11,7 @@ export const Popup: React.FC = () => {
     getSettings().then(setSettings);
   }, []);
 
-  const update = async (partial: Partial<FluxSettings>) => {
+  const update = async (partial: Partial<PromptlySettings>) => {
     const next = await persistSettings(partial);
     setSettings(next);
     setSaved(true);
@@ -39,7 +39,7 @@ export const Popup: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="font-display text-[15px] font-semibold text-[var(--text-primary)] leading-none mb-1">Flux</h1>
+              <h1 className="font-display text-[15px] font-semibold text-[var(--text-primary)] leading-none mb-1">Promptly</h1>
               <p className="text-[11px] text-[var(--text-secondary)] font-medium">Prompt Optimizer</p>
             </div>
           </div>
@@ -80,7 +80,7 @@ export const Popup: React.FC = () => {
                     onChange={(e) => update({ defaultMode: e.target.value as PromptMode })}
                     aria-label="Default prompt mode"
                   >
-                    {PROMPT_MODES.map((m) => (
+                    {PROMPT_MODES.map((m: { value: string, label: string }) => (
                       <option key={m.value} value={m.value}>{m.label}</option>
                     ))}
                   </select>
@@ -92,7 +92,7 @@ export const Popup: React.FC = () => {
                     onChange={(e) => update({ defaultLevel: e.target.value as RewriteLevel })}
                     aria-label="Default rewrite level"
                   >
-                    {REWRITE_LEVELS.map((l) => (
+                    {REWRITE_LEVELS.map((l: { value: string, label: string }) => (
                       <option key={l.value} value={l.value}>{l.label}</option>
                     ))}
                   </select>
@@ -104,7 +104,7 @@ export const Popup: React.FC = () => {
             
             <section className="space-y-3">
               <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Preferences</h2>
-              <div className="flex items-center justify-between flux-card p-3">
+              <div className="flex items-center justify-between promptly-card p-3">
                 <div>
                   <p className="text-[12px] font-medium text-white">Keyboard shortcut</p>
                   <p className="text-[10.5px] text-[var(--text-tertiary)] mt-0.5">Open optimizer from any input</p>
@@ -164,9 +164,9 @@ export const Popup: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Connection Details</h2>
                 <div className="flex items-center gap-1.5">
-                  <div className={`h-1.5 w-1.5 rounded-full ${settings.apiKey ? 'bg-green-500' : 'bg-[var(--text-tertiary)]'}`} />
+                  <div className={`h-1.5 w-1.5 rounded-full ${settings.accessToken ? 'bg-green-500' : 'bg-[var(--text-tertiary)]'}`} />
                   <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-tertiary)]">
-                    {settings.apiKey ? "Connected" : "Fallback Local Mode"}
+                    {settings.accessToken ? "Connected" : "Not Connected"}
                   </span>
                 </div>
               </div>
@@ -174,12 +174,27 @@ export const Popup: React.FC = () => {
                 <Field label="API Base URL">
                   <input className="input font-mono text-[11px]" value={settings.apiBaseUrl} onChange={(e) => update({ apiBaseUrl: e.target.value })} />
                 </Field>
-                <Field label="API Key">
+                <Field label="Promptly Access Token">
                   <input
                     className="input font-mono text-[11px]"
                     type="password"
-                    value={settings.apiKey ?? ""}
-                    onChange={(e) => update({ apiKey: e.target.value })}
+                    value={settings.accessToken ?? ""}
+                    onChange={(e) => update({ accessToken: e.target.value })}
+                    placeholder="Paste your token from promptly.com/dashboard"
+                  />
+                </Field>
+              </div>
+              <div className="space-y-3 mt-6">
+                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Categorizer API (Optional)</h3>
+                <Field label="Categorizer API URL">
+                  <input className="input font-mono text-[11px]" value={settings.categorizerApiUrl || ""} onChange={(e) => update({ categorizerApiUrl: e.target.value })} placeholder="https://api.openai.com/v1/chat/completions" />
+                </Field>
+                <Field label="Categorizer API Key">
+                  <input
+                    className="input font-mono text-[11px]"
+                    type="password"
+                    value={settings.categorizerApiKey ?? ""}
+                    onChange={(e) => update({ categorizerApiKey: e.target.value })}
                     placeholder="sk_..."
                   />
                 </Field>
