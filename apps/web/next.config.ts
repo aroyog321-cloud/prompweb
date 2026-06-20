@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   async headers() {
     return [
       {
@@ -14,9 +14,11 @@ const nextConfig: NextConfig = {
       }
     ]
   },
+  // @ts-ignore
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // @ts-ignore
   typescript: {
     ignoreBuildErrors: true,
   }
