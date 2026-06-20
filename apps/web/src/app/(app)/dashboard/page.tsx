@@ -130,7 +130,7 @@ export default function DashboardPage() {
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile' }, (payload) => {
         // Just reload contexts
-        supabase.from('ContextProfile').select('*', { count: 'exact', head: true }).eq('userId', currentUser.id)
+        supabase.from('ContextProfile').select('*', { count: 'exact', head: true })
           .then(({ count }) => { if (count !== null) setContextsCount(count) });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats' }, (payload) => {
