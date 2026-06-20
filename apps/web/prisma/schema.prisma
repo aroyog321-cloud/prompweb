@@ -1,0 +1,222 @@
+// Prisma Schema for Promptly Prompt Optimizer Backend
+// Models: Users, Profiles, PromptHistory, ContextProfiles, UsageLogs
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  TEAM
+}
+
+enum PromptMode {
+  GENERAL
+  DEVELOPER
+  DESIGNER
+  MARKETING
+  RESEARCH
+  BUSINESS
+  CONTENT_CREATOR
+  STARTUP_FOUNDER
+}
+
+enum RewriteLevel {
+  LIGHT
+  MEDIUM
+  AGGRESSIVE
+  EXPERT
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  name             String?
+  image            String?
+  role             Role              @default(USER)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  profile          Profile?
+  subscriptions    Subscription[]
+  promptHistory    PromptHistory[]
+  savedPrompts     SavedPrompt[]
+  contextProfiles  ContextProfile[]
+  usageLogs        UsageLog[]
+  workspaceMembers WorkspaceMember[]
+  templates        Template[]
+  teamWorkspaces   TeamWorkspace[]
+
+  @@index([email])
+}
+
+model Profile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  companyName  String?
+  websiteURL   String?
+  industry     String?
+  audience     String?
+  writingStyle String?
+  brandTone    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Subscription {
+  id                   String           @id @default(cuid())
+  userId               String
+  user                 User             @relation(fields: [userId], references: [id])
+  tier                 SubscriptionTier
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean          @default(false)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([stripeCustomerId])
+  @@index([stripeSubscriptionId])
+}
+
+model PromptHistory {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id])
+  originalPrompt  String
+  optimizedPrompt String
+  platformUsed    String // e.g., "chatgpt", "gemini", "claude"
+  promptMode      PromptMode?
+  rewriteLevel    RewriteLevel?
+  tokensUsed      Int?
+  responseTime    Float? // in seconds
+  createdAt       DateTime      @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model SavedPrompt {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id])
+  title      String
+  content    String
+  mode       PromptMode?
+  level      RewriteLevel?
+  isFavorite Boolean       @default(false)
+  tags       String[] // Array of strings for tagging
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([isFavorite])
+}
+
+model TemplateCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  icon        String? // Icon name from lucide-react or similar
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  templates   Template[]
+
+  @@index([slug])
+}
+
+model Template {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  content     String
+  categoryId  String
+  category    TemplateCategory @relation(fields: [categoryId], references: [id])
+  authorId    String
+  author      User             @relation(fields: [authorId], references: [id])
+  isPublic    Boolean          @default(false)
+  tags        String[] // Array of strings
+  usageCount  Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([categoryId])
+  @@index([authorId])
+  @@index([isPublic])
+}
+
+model ContextProfile {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  name         String // e.g., "Acme Corp Marketing"
+  companyName  String?
+  websiteURL   String?
+  industry     String?
+  audience     String?
+  writingStyle String?
+  brandTone    String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isDefault])
+}
+
+model UsageLog {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  actionType     String // e.g., "prompt_optimization", "template_used"
+  platform       String? // AI platform used if applicable
+  tokensConsumed Int?
+  metadata       Json? // Flexible JSON for additional data
+  createdAt      DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([actionType])
+}
+
+model TeamWorkspace {
+  id               String            @id @default(cuid())
+  name             String
+  description      String?
+  ownerId          String
+  owner            User              @relation(fields: [ownerId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  workspaceMembers WorkspaceMember[]
+
+  @@index([ownerId])
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  workspace   TeamWorkspace @relation(fields: [workspaceId], references: [id])
+  userId      String
+  user        User          @relation(fields: [userId], references: [id])
+  role        Role          @default(USER)
+  joinedAt    DateTime      @default(now())
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
