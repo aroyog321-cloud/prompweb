@@ -126,7 +126,7 @@ export default function DashboardPage() {
       .channel('schema-db-changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory' }, (payload) => {
         // Only append to Recent Prompts to avoid full reload
-        setRecentPrompts(prev => [payload.new, ...prev].slice(0, 3));
+        setRecentPrompts((prev: any[]) => [payload.new, ...prev].slice(0, 3));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile' }, (payload) => {
         // Just reload contexts
@@ -135,7 +135,7 @@ export default function DashboardPage() {
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats' }, (payload) => {
         // Update limits inline
-        setStats(prev => ({ ...prev, ...payload.new }));
+        setStats((prev: any) => ({ ...prev, ...payload.new }));
       })
       .subscribe()
 

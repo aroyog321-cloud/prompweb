@@ -291,7 +291,7 @@ ${draftText}`;
       const finalRes = await makeGeminiCall(systemPrompt, critiquePrompt, !!body.stream, getLevelConfig(body.level, true), activeApiKey);
       
       if (body.stream) {
-        return createOpenAIStream(finalRes, { user, body, platform, supabase: supabaseUserClient, supabaseUrl });
+        return createOpenAIStream(finalRes, { user, body, platform: platform || "api", supabase: supabaseUserClient, supabaseUrl });
       } else {
         const finalData = await finalRes.json();
         const optimizedText = finalData.candidates[0].content.parts[0].text.trim();
@@ -319,7 +319,7 @@ ${draftText}`;
       const finalRes = await makeGeminiCall(systemPrompt, userPrompt, !!body.stream, getLevelConfig(body.level, false), activeApiKey);
       
       if (body.stream) {
-        return createOpenAIStream(finalRes, { user, body, platform, supabase: supabaseUserClient, supabaseUrl });
+        return createOpenAIStream(finalRes, { user, body, platform: platform || "api", supabase: supabaseUserClient, supabaseUrl });
       } else {
         const finalData = await finalRes.json();
         const optimizedText = finalData.candidates[0].content.parts[0].text.trim();
