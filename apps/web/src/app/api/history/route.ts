@@ -76,8 +76,8 @@ export async function POST(request: Request) {
       originalPrompt: body.originalPrompt,
       optimizedPrompt: body.optimizedPrompt,
       platformUsed: body.platformUsed || "api",
-      promptMode: body.promptMode || null,
-      rewriteLevel: body.rewriteLevel || null,
+      promptMode: body.promptMode ? body.promptMode.replace(/-/g, '_').toUpperCase() : null,
+      rewriteLevel: body.rewriteLevel ? body.rewriteLevel.toUpperCase() : null,
       responseTime: body.responseTime || null
     });
 

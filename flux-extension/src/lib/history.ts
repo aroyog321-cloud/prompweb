@@ -79,8 +79,8 @@ export const useHistory = create<HistoryState>((set, get) => ({
                text: se.originalPrompt,
                optimized: se.optimizedPrompt,
                platform: se.platformUsed,
-               mode: se.promptMode || "auto",
-               level: se.rewriteLevel || "medium",
+               mode: (se.promptMode || "auto").toLowerCase(),
+               level: (se.rewriteLevel || "medium").toLowerCase(),
                ts: new Date(se.createdAt).getTime(),
                source: "api"
              });
@@ -110,27 +110,29 @@ export const useHistory = create<HistoryState>((set, get) => ({
     await writeStorage(next);
 
     // Sync to backend if it's a local fallback or we just want to ensure it's logged
-    try {
-      const settings = await getSettings();
-      if (settings.apiBaseUrl && settings.accessToken) {
-        const endpoint = `${settings.apiBaseUrl.replace(/\/$/, "")}/api/history`;
-        await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${settings.accessToken}`
-          },
-          body: JSON.stringify({
-            originalPrompt: entry.text,
-            optimizedPrompt: entry.optimized,
-            platformUsed: entry.platform,
-            promptMode: entry.mode,
-            rewriteLevel: entry.level
-          })
-        });
+    if (partial.source === "local-fallback") {
+      try {
+        const settings = await getSettings();
+        if (settings.apiBaseUrl && settings.accessToken) {
+          const endpoint = `${settings.apiBaseUrl.replace(/\/$/, "")}/api/history`;
+          await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${settings.accessToken}`
+            },
+            body: JSON.stringify({
+              originalPrompt: entry.text,
+              optimizedPrompt: entry.optimized,
+              platformUsed: entry.platform,
+              promptMode: entry.mode,
+              rewriteLevel: entry.level
+            })
+          });
+        }
+      } catch (e) {
+        console.warn("Failed to sync history to server", e);
       }
-    } catch (e) {
-      console.warn("Failed to sync history to server", e);
     }
 
     return entry;

@@ -106,11 +106,7 @@ export default function DashboardPage() {
         if (prompts && prompts.length > 0) {
           setRecentPrompts(prompts)
         } else {
-          // Mock some data if empty so the dashboard looks good
-          setRecentPrompts([
-            { id: '1', originalPrompt: 'Rewrite my email to my boss...', platformUsed: 'ChatGPT', responseTime: 0.124, createdAt: new Date().toISOString() },
-            { id: '2', originalPrompt: 'Generate a react component...', platformUsed: 'Claude', responseTime: 0.089, createdAt: new Date(Date.now() - 3600000).toISOString() }
-          ])
+          setRecentPrompts([])
         }
 
       } catch (err) {
@@ -136,6 +132,7 @@ export default function DashboardPage() {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats' }, (payload) => {
         // Update limits inline
         setStats((prev: any) => ({ ...prev, ...payload.new }));
+        window.postMessage({ type: "PROMPTLY_PLAN_UPDATED" }, window.location.origin);
       })
       .subscribe()
 
@@ -245,7 +242,12 @@ export default function DashboardPage() {
           </div>
           
           <div className="flex flex-col">
-            {recentPrompts.map((prompt, idx) => (
+            {recentPrompts.length === 0 ? (
+              <div className="px-6 py-8 text-center text-zinc-500 text-sm">
+                No recent optimizations found. Try optimizing a prompt in the extension!
+              </div>
+            ) : (
+              recentPrompts.map((prompt, idx) => (
               <div key={prompt.id} className={`px-6 py-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors ${idx !== recentPrompts.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
                 <div className="flex items-center gap-4">
                   <div className="size-10 rounded-xl bg-[#242427] border border-white/[0.04] flex items-center justify-center shrink-0">
