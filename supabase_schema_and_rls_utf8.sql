@@ -319,3 +319,56 @@ CREATE POLICY "Users read own context" ON "ContextProfile"
 CREATE POLICY "Users read own usage" ON usage_stats
   FOR SELECT USING (auth.uid()::text = id::text);
 
+-- Enable Row Level Security
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Profile" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Subscription" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "SavedPrompt" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "UsageLog" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TemplateCategory" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Template" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "TeamWorkspace" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "WorkspaceMember" ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist (prevents errors on re-run)
+DROP POLICY IF EXISTS "Users manage own User record" ON "User";
+DROP POLICY IF EXISTS "Users manage own Profile" ON "Profile";
+DROP POLICY IF EXISTS "Users manage own Subscription" ON "Subscription";
+DROP POLICY IF EXISTS "Users manage own SavedPrompt" ON "SavedPrompt";
+DROP POLICY IF EXISTS "Users manage own UsageLog" ON "UsageLog";
+DROP POLICY IF EXISTS "Anyone can read TemplateCategory" ON "TemplateCategory";
+DROP POLICY IF EXISTS "Anyone can read public Templates" ON "Template";
+DROP POLICY IF EXISTS "Users manage own Templates" ON "Template";
+DROP POLICY IF EXISTS "Users manage own TeamWorkspace" ON "TeamWorkspace";
+DROP POLICY IF EXISTS "Users manage own WorkspaceMember" ON "WorkspaceMember";
+
+-- Create policies
+CREATE POLICY "Users manage own User record" ON "User"
+  FOR ALL USING (auth.uid()::text = id::text) WITH CHECK (auth.uid()::text = id::text);
+
+CREATE POLICY "Users manage own Profile" ON "Profile"
+  FOR ALL USING (auth.uid()::text = "userId"::text) WITH CHECK (auth.uid()::text = "userId"::text);
+
+CREATE POLICY "Users manage own Subscription" ON "Subscription"
+  FOR ALL USING (auth.uid()::text = "userId"::text) WITH CHECK (auth.uid()::text = "userId"::text);
+
+CREATE POLICY "Users manage own SavedPrompt" ON "SavedPrompt"
+  FOR ALL USING (auth.uid()::text = "userId"::text) WITH CHECK (auth.uid()::text = "userId"::text);
+
+CREATE POLICY "Users manage own UsageLog" ON "UsageLog"
+  FOR ALL USING (auth.uid()::text = "userId"::text) WITH CHECK (auth.uid()::text = "userId"::text);
+
+CREATE POLICY "Anyone can read TemplateCategory" ON "TemplateCategory"
+  FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can read public Templates" ON "Template"
+  FOR SELECT USING ("isPublic" = true);
+
+CREATE POLICY "Users manage own Templates" ON "Template"
+  FOR ALL USING (auth.uid()::text = "authorId"::text) WITH CHECK (auth.uid()::text = "authorId"::text);
+
+CREATE POLICY "Users manage own TeamWorkspace" ON "TeamWorkspace"
+  FOR ALL USING (auth.uid()::text = "ownerId"::text) WITH CHECK (auth.uid()::text = "ownerId"::text);
+
+CREATE POLICY "Users manage own WorkspaceMember" ON "WorkspaceMember"
+  FOR ALL USING (auth.uid()::text = "userId"::text) WITH CHECK (auth.uid()::text = "userId"::text);
