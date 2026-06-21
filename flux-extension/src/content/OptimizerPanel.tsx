@@ -172,7 +172,7 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
         level: levelToUse,
         platform: window.location.hostname,
         source: result.source as any
-      });
+      }, { accessToken: settings.accessToken, apiBaseUrl: settings.apiBaseUrl });
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Optimization failed");

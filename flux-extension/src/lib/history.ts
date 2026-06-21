@@ -17,7 +17,7 @@ interface HistoryState {
   entries: HistoryEntry[];
   hydrated: boolean;
   hydrate: () => Promise<void>;
-  add: (entry: Omit<HistoryEntry, "id" | "ts">) => Promise<HistoryEntry>;
+  add: (entry: Omit<HistoryEntry, "id" | "ts">, auth?: { accessToken?: string; apiBaseUrl?: string }) => Promise<HistoryEntry>;
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
   toggleStar: (id: string) => Promise<void>;
@@ -99,7 +99,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
     set({ entries: finalEntries, hydrated: true });
   },
 
-  add: async (partial) => {
+  add: async (partial, auth) => {
     const entry: HistoryEntry = {
       id: newId(),
       ts: Date.now(),
@@ -115,17 +115,18 @@ export const useHistory = create<HistoryState>((set, get) => ({
         const settings = await getSettings();
         const CORRECT_URL = "https://prompweb.vercel.app";
         const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
-        const apiBaseUrl = (!settings.apiBaseUrl || wrongUrls.includes(settings.apiBaseUrl))
-          ? CORRECT_URL
-          : settings.apiBaseUrl;
+        // Prefer caller-supplied auth (live from component state) over stale chrome.storage values
+        const rawUrl = auth?.apiBaseUrl || settings.apiBaseUrl;
+        const apiBaseUrl = (!rawUrl || wrongUrls.includes(rawUrl)) ? CORRECT_URL : rawUrl;
+        const accessToken = auth?.accessToken || settings.accessToken;
 
-        if (apiBaseUrl && settings.accessToken) {
+        if (apiBaseUrl && accessToken) {
           const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/api/history`;
           const res = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${settings.accessToken}`
+              Authorization: `Bearer ${accessToken}`
             },
             body: JSON.stringify({
               originalPrompt: entry.text,

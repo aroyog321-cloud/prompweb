@@ -292,7 +292,7 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
         level,
         platform: window.location.hostname,
         source: result.source as any
-      });
+      }, { accessToken: settings.accessToken, apiBaseUrl: settings.apiBaseUrl });
 
       lastAutoRef.current = { original: textToOptimize, optimized: result.optimized };
 
