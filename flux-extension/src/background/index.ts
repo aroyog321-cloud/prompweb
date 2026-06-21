@@ -11,16 +11,19 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
+  const CORRECT_URL = "https://prompweb.vercel.app";
+  const STORAGE_KEY = "promptly_settings_v1";
+
   if (details.reason === "install") {
-    chrome.storage.local.get("promptly_settings_v1").then((res) => {
-      if (!res.promptly_settings_v1) {
+    chrome.storage.local.get(STORAGE_KEY).then((res) => {
+      if (!res[STORAGE_KEY]) {
         chrome.storage.local.set({
-          promptly_settings_v1: {
+          [STORAGE_KEY]: {
             theme: "dark",
             defaultMode: "auto",
             defaultLevel: "medium",
             shortcutEnabled: true,
-            apiBaseUrl: "https://api.promptly-optimizer.app",
+            apiBaseUrl: CORRECT_URL,
             apiKey: "",
             contextProfile: {},
             contextInjectionEnabled: false
@@ -29,4 +32,35 @@ chrome.runtime.onInstalled.addListener((details) => {
       }
     });
   }
+
+  // Migration: fix wrong apiBaseUrl for existing installs (update or install)
+  chrome.storage.local.get(STORAGE_KEY).then((res) => {
+    const current = res[STORAGE_KEY];
+    if (current) {
+      const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
+      if (!current.apiBaseUrl || wrongUrls.includes(current.apiBaseUrl)) {
+        chrome.storage.local.set({
+          [STORAGE_KEY]: { ...current, apiBaseUrl: CORRECT_URL }
+        });
+        console.log("[Promptly] Migrated apiBaseUrl to", CORRECT_URL);
+      }
+    }
+  });
 });
+
+// Also fix wrong URL on every browser startup (not just install/update)
+function migrateApiBaseUrl() {
+  const CORRECT_URL = "https://prompweb.vercel.app";
+  const STORAGE_KEY = "promptly_settings_v1";
+  const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
+
+  chrome.storage.local.get(STORAGE_KEY).then((res) => {
+    const current = res[STORAGE_KEY];
+    if (current && (!current.apiBaseUrl || wrongUrls.includes(current.apiBaseUrl))) {
+      chrome.storage.local.set({ [STORAGE_KEY]: { ...current, apiBaseUrl: CORRECT_URL } });
+      console.log("[Promptly] Fixed apiBaseUrl to", CORRECT_URL);
+    }
+  });
+}
+
+chrome.runtime.onStartup.addListener(migrateApiBaseUrl);

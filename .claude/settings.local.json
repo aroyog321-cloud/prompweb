@@ -49,7 +49,8 @@
       "Bash(\"C:/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=1280,800 --dump-dom --virtual-time-budget=30000 \"http://[::1]:3000/\")",
       "Bash(npm init *)",
       "Bash(gh pr *)",
-      "Bash(grep -E \"\\\\.\\(tsx|ts|js|jsx\\)$\")"
+      "Bash(grep -E \"\\\\.\\(tsx|ts|js|jsx\\)$\")",
+      "Bash(xxd)"
     ]
   }
 }
