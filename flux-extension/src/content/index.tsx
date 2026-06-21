@@ -285,6 +285,23 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
       writeInputText(input, result.optimized);
 
+      // Direct server sync — don't depend on history store auth state
+      const SYNC_URL = "https://prompweb.vercel.app";
+      const token = settings.accessToken;
+      if (token) {
+        fetch(`${SYNC_URL}/api/history`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            originalPrompt: textToOptimize,
+            optimizedPrompt: result.optimized,
+            platformUsed: window.location.hostname,
+            promptMode: settings.defaultMode || "auto",
+            rewriteLevel: level
+          })
+        }).catch(e => console.warn("[Promptly] Server sync failed:", e));
+      }
+
       history.add({
         text: textToOptimize,
         optimized: result.optimized,
