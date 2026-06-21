@@ -99,6 +99,7 @@ function createOpenAIStream(response: Response, logData?: { user: any, body: any
     async flush() {
       if (logData && logData.user && !logData.supabaseUrl.includes('placeholder')) {
         const { error: insertError } = await logData.supabase.from('PromptHistory').insert({
+          id: crypto.randomUUID(),
           userId: logData.user.id,
           originalPrompt: logData.body.text,
           optimizedPrompt: accumulatedText.trim(),
@@ -128,6 +129,7 @@ function createOpenAIStream(response: Response, logData?: { user: any, body: any
       // Client disconnected early — persist what we have so far!
       if (accumulatedText.trim().length > 10 && logData && logData.user && !logData.supabaseUrl.includes('placeholder')) {
         logData.supabase.from('PromptHistory').insert({
+          id: crypto.randomUUID(),
           userId: logData.user.id,
           originalPrompt: logData.body.text,
           optimizedPrompt: accumulatedText.trim() + " [truncated]",
@@ -299,6 +301,7 @@ ${draftText}`;
         // Log to Supabase
         if (user && !supabaseUrl.includes('placeholder')) {
           const { error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
+            id: crypto.randomUUID(),
             userId: user.id,
             originalPrompt: body.text,
             optimizedPrompt: optimizedText,
@@ -327,6 +330,7 @@ ${draftText}`;
         // Log to Supabase
         if (user && !supabaseUrl.includes('placeholder')) {
           const { error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
+            id: crypto.randomUUID(),
             userId: user.id,
             originalPrompt: body.text,
             optimizedPrompt: optimizedText,

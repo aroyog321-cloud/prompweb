@@ -125,16 +125,16 @@ export default function DashboardPage() {
 
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory', filter: `userId=eq.${user.id}` }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory', filter: `"userId"=eq.${user.id}` }, (payload) => {
         // Only append to Recent Prompts to avoid full reload
         setRecentPrompts((prev: any[]) => [payload.new, ...prev].slice(0, 3));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile', filter: `userId=eq.${user.id}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile', filter: `"userId"=eq.${user.id}` }, (payload) => {
         // Just reload contexts
         supabase.from('ContextProfile').select('*', { count: 'exact', head: true })
           .then(({ count }) => { if (count !== null) setContextsCount(count) });
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats', filter: `userId=eq.${user.id}` }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats', filter: `id=eq.${user.id}` }, (payload) => {
         // Update limits inline
         setStats((prev: any) => ({ ...prev, ...payload.new }));
         window.postMessage({ type: "PROMPTLY_PLAN_UPDATED" }, window.location.origin);
