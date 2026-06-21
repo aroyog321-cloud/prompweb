@@ -25,34 +25,6 @@ const DashboardSkeleton = () => (
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [testResult, setTestResult] = useState<any>(null)
-
-  const runTestSync = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) return setTestResult("No access token found")
-
-      const res = await fetch('/api/history', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          Authorization: `Bearer ${token}` 
-        },
-        body: JSON.stringify({ 
-          originalPrompt: "Test Prompt from Dashboard", 
-          optimizedPrompt: "Test optimized prompt", 
-          platformUsed: "api",
-          promptMode: "DEVELOPER",
-          rewriteLevel: "LIGHT"
-        })
-      })
-      const data = await res.json()
-      setTestResult(data)
-    } catch (e) {
-      setTestResult(e instanceof Error ? e.message : String(e))
-    }
-  }
   const [tier, setTier] = useState<'free' | 'pro' | 'expert'>('free')
   const [token, setToken] = useState<string | null>(null)
   
@@ -224,20 +196,6 @@ export default function DashboardPage() {
 
         <div className="mb-8">
           <AuthSyncComponent accessToken={token || ''} />
-          
-          <div style={{ marginTop: '1rem', padding: '1rem', background: '#18181b', borderRadius: '8px', border: '1px solid #27272a' }}>
-            <button 
-              onClick={runTestSync}
-              style={{ background: '#3b82f6', color: 'white', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', border: 'none', fontWeight: 600 }}
-            >
-              Run Test Sync
-            </button>
-            {testResult && (
-              <pre style={{ marginTop: '1rem', padding: '1rem', background: '#09090b', borderRadius: '4px', fontSize: '12px', overflowX: 'auto', whiteSpace: 'pre-wrap', color: '#ef4444' }}>
-                {JSON.stringify(testResult, null, 2)}
-              </pre>
-            )}
-          </div>
         </div>
 
         {/* Top Cards */}
