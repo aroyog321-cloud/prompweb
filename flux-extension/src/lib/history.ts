@@ -167,9 +167,32 @@ export const useHistory = create<HistoryState>((set, get) => ({
   },
 
   toggleStar: async (id) => {
-    const next = get().entries.map((e) => e.id === id ? { ...e, isStarred: !e.isStarred } : e);
+    const entry = get().entries.find(e => e.id === id);
+    if (!entry) return;
+    const newStarred = !entry.isStarred;
+    const next = get().entries.map((e) => e.id === id ? { ...e, isStarred: newStarred } : e);
     set({ entries: next });
     await writeStorage(next);
+
+    // Sync star status to server so starred entries survive the 1-day cleanup
+    try {
+      const settings = await getSettings();
+      const CORRECT_URL = "https://prompweb.vercel.app";
+      const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
+      const rawUrl = settings.apiBaseUrl;
+      const apiBaseUrl = (!rawUrl || wrongUrls.includes(rawUrl)) ? CORRECT_URL : rawUrl;
+      const accessToken = settings.accessToken;
+
+      if (apiBaseUrl && accessToken) {
+        fetch(`${apiBaseUrl}/api/history`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+          body: JSON.stringify({ id, isStarred: newStarred })
+        }).catch(e => console.warn("[Promptly] Star sync failed:", e));
+      }
+    } catch (e) {
+      console.warn("[Promptly] toggleStar server sync error:", e);
+    }
   }
 }));
 

@@ -96,19 +96,36 @@ export default function DashboardPage() {
         
         if (ctxCount !== null) setContextsCount(ctxCount)
 
-        // Try to load recent prompts
-        const { data: prompts } = await supabase
+        // Load starred entries (survive 1-day cleanup)
+        const { data: starredPrompts } = await supabase
           .from('PromptHistory')
           .select('*')
           .eq('userId', currentUser.id)
+          .eq('isStarred', true)
           .order('createdAt', { ascending: false })
-          .limit(3)
-        
-        if (prompts && prompts.length > 0) {
-          setRecentPrompts(prompts)
-        } else {
-          setRecentPrompts([])
-        }
+          .limit(10)
+
+        // Load today's unstarred entries (will be cleaned up after 1 day)
+        const todayStart = new Date()
+        todayStart.setHours(0, 0, 0, 0)
+        const { data: todayPrompts } = await supabase
+          .from('PromptHistory')
+          .select('*')
+          .eq('userId', currentUser.id)
+          .eq('isStarred', false)
+          .gte('createdAt', todayStart.toISOString())
+          .order('createdAt', { ascending: false })
+          .limit(5)
+
+        // Merge: starred first, then today's unstarred, deduped
+        const seen = new Set<string>()
+        const merged = [...(starredPrompts || []), ...(todayPrompts || [])].filter(p => {
+          if (seen.has(p.id)) return false
+          seen.add(p.id)
+          return true
+        })
+
+        setRecentPrompts(merged)
 
       } catch (err) {
         console.error('Error loading user data:', err)
@@ -283,10 +300,17 @@ export default function DashboardPage() {
                 </div>
                 
                 <div className="flex items-center gap-8">
-                  <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.05]">
-                    <span className="size-1.5 rounded-full bg-emerald-500" />
-                    <span className="text-[11px] font-medium text-zinc-300">Status: Optimized</span>
-                  </div>
+                  {prompt.isStarred ? (
+                    <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-amber-400">★</span>
+                      <span className="text-[11px] font-medium text-amber-300">Starred — Saved</span>
+                    </div>
+                  ) : (
+                    <div className="hidden md:flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.05]">
+                      <span className="size-1.5 rounded-full bg-emerald-500" />
+                      <span className="text-[11px] font-medium text-zinc-300">Today only</span>
+                    </div>
+                  )}
                   
                   <div className="text-right hidden sm:block w-20">
                     <p className="text-xs font-semibold text-white">{prompt.responseTime ? `${(prompt.responseTime * 1000).toFixed(0)}ms` : '--'}</p>
