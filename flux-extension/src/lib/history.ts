@@ -110,12 +110,12 @@ export const useHistory = create<HistoryState>((set, get) => ({
     await writeStorage(next);
 
     // Sync to backend if it's a local fallback or we just want to ensure it's logged
-    if (partial.source === "local-fallback") {
+    if (partial.source === "local-fallback" || !partial.source) {
       try {
         const settings = await getSettings();
         if (settings.apiBaseUrl && settings.accessToken) {
           const endpoint = `${settings.apiBaseUrl.replace(/\/$/, "")}/api/history`;
-          await fetch(endpoint, {
+          const res = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -129,6 +129,14 @@ export const useHistory = create<HistoryState>((set, get) => ({
               rewriteLevel: entry.level
             })
           });
+          if (res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (data?.id) {
+              const updated = get().entries.map(e => e === entry ? { ...e, id: data.id } : e);
+              set({ entries: updated });
+              await writeStorage(updated);
+            }
+          }
         }
       } catch (e) {
         console.warn("Failed to sync history to server", e);

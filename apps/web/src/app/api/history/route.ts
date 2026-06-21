@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
-    const { error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
+    const { data, error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
       userId: user.id,
       originalPrompt: body.originalPrompt,
       optimizedPrompt: body.optimizedPrompt,
@@ -79,11 +79,11 @@ export async function POST(request: Request) {
       promptMode: body.promptMode ? body.promptMode.replace(/-/g, '_').toUpperCase() : null,
       rewriteLevel: body.rewriteLevel ? body.rewriteLevel.toUpperCase() : null,
       responseTime: body.responseTime || null
-    });
+    }).select('id').single();
 
     if (insertError) throw insertError;
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, id: data.id });
   } catch (error) {
     console.error("POST /api/history error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

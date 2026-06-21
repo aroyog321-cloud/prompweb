@@ -35,6 +35,7 @@ export default function DashboardPage() {
   
   const [contextsCount, setContextsCount] = useState(0)
   const [recentPrompts, setRecentPrompts] = useState<any[]>([])
+  const [user, setUser] = useState<any>(null)
 
   const supabase = createClient()
 
@@ -60,7 +61,7 @@ export default function DashboardPage() {
           window.location.href = '/login'
           return
         }
-
+        
         setUser(currentUser)
         setToken(currentToken)
         
@@ -117,29 +118,47 @@ export default function DashboardPage() {
       }
     }
     loadData()
+  }, [])
+
+  useEffect(() => {
+    if (!user) return
 
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory', filter: `userId=eq.${user.id}` }, (payload) => {
         // Only append to Recent Prompts to avoid full reload
         setRecentPrompts((prev: any[]) => [payload.new, ...prev].slice(0, 3));
       })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile' }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile', filter: `userId=eq.${user.id}` }, (payload) => {
         // Just reload contexts
         supabase.from('ContextProfile').select('*', { count: 'exact', head: true })
           .then(({ count }) => { if (count !== null) setContextsCount(count) });
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats' }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'usage_stats', filter: `userId=eq.${user.id}` }, (payload) => {
         // Update limits inline
         setStats((prev: any) => ({ ...prev, ...payload.new }));
         window.postMessage({ type: "PROMPTLY_PLAN_UPDATED" }, window.location.origin);
       })
       .subscribe()
 
+    function onVisibility() {
+      if (document.visibilityState === 'visible' && user) {
+        supabase
+          .from('PromptHistory')
+          .select('*')
+          .eq('userId', user.id)
+          .order('createdAt', { ascending: false })
+          .limit(3)
+          .then(({ data }) => { if (data) setRecentPrompts(data) })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       supabase.removeChannel(channel)
+      document.removeEventListener('visibilitychange', onVisibility)
     }
-  }, [])
+  }, [user])
 
   if (loading) return <DashboardSkeleton />
 
