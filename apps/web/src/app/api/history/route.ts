@@ -71,9 +71,7 @@ export async function POST(request: Request) {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data, error: insertError } = await supabase.from('PromptHistory').insert({
+    const { data, error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
       id: crypto.randomUUID(),
       userId: user.id,
       originalPrompt: body.originalPrompt,
