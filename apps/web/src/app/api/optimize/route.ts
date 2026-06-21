@@ -103,7 +103,7 @@ function createOpenAIStream(response: Response, logData?: { user: any, body: any
           originalPrompt: logData.body.text,
           optimizedPrompt: accumulatedText.trim(),
           platformUsed: logData.platform || "api",
-          promptMode: logData.body.mode.toUpperCase(),
+          promptMode: logData.body.mode.replace(/-/g, '_').toUpperCase(),
           rewriteLevel: logData.body.level.toUpperCase(),
         });
         if (insertError) console.error("Failed to log prompt history (streamed):", insertError);
