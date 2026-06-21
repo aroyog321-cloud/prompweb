@@ -96,36 +96,16 @@ export default function DashboardPage() {
         
         if (ctxCount !== null) setContextsCount(ctxCount)
 
-        // Load starred entries (survive 1-day cleanup)
-        const { data: starredPrompts } = await supabase
+        // Show all recent prompts - both starred and unstarred
+        // The daily cron job handles deleting non-starred entries older than 1 day
+        const { data: allPrompts } = await supabase
           .from('PromptHistory')
           .select('*')
           .eq('userId', currentUser.id)
-          .eq('isStarred', true)
           .order('createdAt', { ascending: false })
-          .limit(10)
+          .limit(20)
 
-        // Load today's unstarred entries (will be cleaned up after 1 day)
-        const todayStart = new Date()
-        todayStart.setHours(0, 0, 0, 0)
-        const { data: todayPrompts } = await supabase
-          .from('PromptHistory')
-          .select('*')
-          .eq('userId', currentUser.id)
-          .eq('isStarred', false)
-          .gte('createdAt', todayStart.toISOString())
-          .order('createdAt', { ascending: false })
-          .limit(5)
-
-        // Merge: starred first, then today's unstarred, deduped
-        const seen = new Set<string>()
-        const merged = [...(starredPrompts || []), ...(todayPrompts || [])].filter(p => {
-          if (seen.has(p.id)) return false
-          seen.add(p.id)
-          return true
-        })
-
-        setRecentPrompts(merged)
+        setRecentPrompts(allPrompts || [])
 
       } catch (err) {
         console.error('Error loading user data:', err)
@@ -142,9 +122,8 @@ export default function DashboardPage() {
 
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory', filter: `"userId"=eq.${user.id}` }, (payload) => {
-        // Only append to Recent Prompts to avoid full reload
-        setRecentPrompts((prev: any[]) => [payload.new, ...prev].slice(0, 3));
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'PromptHistory', filter: `userId=eq.${user.id}` }, (payload) => {
+        setRecentPrompts((prev: any[]) => [payload.new, ...prev].slice(0, 20));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ContextProfile', filter: `"userId"=eq.${user.id}` }, (payload) => {
         // Just reload contexts
@@ -165,7 +144,7 @@ export default function DashboardPage() {
           .select('*')
           .eq('userId', user.id)
           .order('createdAt', { ascending: false })
-          .limit(3)
+          .limit(20)
           .then(({ data }) => { if (data) setRecentPrompts(data) })
       }
     }
