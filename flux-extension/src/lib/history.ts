@@ -112,9 +112,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
     {
       try {
         const settings = await getSettings();
-        const CORRECT_URL = "https://prompweb.vercel.app";
-        // Always use production url for sync
-        const apiBaseUrl = CORRECT_URL;
+        const apiBaseUrl = auth?.apiBaseUrl || settings.apiBaseUrl;
         const accessToken = auth?.accessToken || settings.accessToken;
 
         if (apiBaseUrl && accessToken) {

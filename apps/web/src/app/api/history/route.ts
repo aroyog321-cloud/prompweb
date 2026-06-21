@@ -71,14 +71,23 @@ export async function POST(request: Request) {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
+    const VALID_MODES = ['GENERAL', 'DEVELOPER', 'DESIGNER', 'MARKETING', 'RESEARCH', 'BUSINESS', 'CONTENT_CREATOR', 'STARTUP_FOUNDER'];
+    const VALID_LEVELS = ['LIGHT', 'MEDIUM', 'AGGRESSIVE', 'EXPERT'];
+
+    const rawMode = body.promptMode ? body.promptMode.replace(/-/g, '_').toUpperCase() : null;
+    const rawLevel = body.rewriteLevel ? body.rewriteLevel.toUpperCase() : null;
+
+    const promptMode = VALID_MODES.includes(rawMode) ? rawMode : null;
+    const rewriteLevel = VALID_LEVELS.includes(rawLevel) ? rawLevel : null;
+
     const { data, error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
       id: crypto.randomUUID(),
       userId: user.id,
       originalPrompt: body.originalPrompt,
       optimizedPrompt: body.optimizedPrompt,
       platformUsed: body.platformUsed || "api",
-      promptMode: body.promptMode ? body.promptMode.replace(/-/g, '_').toUpperCase() : null,
-      rewriteLevel: body.rewriteLevel ? body.rewriteLevel.toUpperCase() : null,
+      promptMode,
+      rewriteLevel,
       responseTime: body.responseTime || null,
       isStarred: false
     }).select('id').single();

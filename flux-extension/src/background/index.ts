@@ -37,7 +37,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   chrome.storage.local.get(STORAGE_KEY).then((res) => {
     const current = res[STORAGE_KEY];
     if (current) {
-      const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
+      const wrongUrls = ["https://api.promptly-optimizer.app"];
       if (!current.apiBaseUrl || wrongUrls.includes(current.apiBaseUrl)) {
         chrome.storage.local.set({
           [STORAGE_KEY]: { ...current, apiBaseUrl: CORRECT_URL }
@@ -52,7 +52,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 function migrateApiBaseUrl() {
   const CORRECT_URL = "https://prompweb.vercel.app";
   const STORAGE_KEY = "promptly_settings_v1";
-  const wrongUrls = ["https://api.promptly-optimizer.app", "http://localhost:3000", "http://127.0.0.1:3000"];
+  const wrongUrls = ["https://api.promptly-optimizer.app"];
 
   chrome.storage.local.get(STORAGE_KEY).then((res) => {
     const current = res[STORAGE_KEY];
