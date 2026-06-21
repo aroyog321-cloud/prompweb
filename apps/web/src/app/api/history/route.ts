@@ -71,24 +71,41 @@ export async function POST(request: Request) {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
-    const VALID_MODES = ['GENERAL', 'DEVELOPER', 'DESIGNER', 'MARKETING', 'RESEARCH', 'BUSINESS', 'CONTENT_CREATOR', 'STARTUP_FOUNDER'];
-    const VALID_LEVELS = ['LIGHT', 'MEDIUM', 'AGGRESSIVE', 'EXPERT'];
+    const MODE_MAP: Record<string, string | null> = {
+      AUTO: null,
+      GENERAL: "GENERAL",
+      DEVELOPER: "DEVELOPER",
+      DESIGNER: "DESIGNER",
+      MARKETING: "MARKETING",
+      RESEARCH: "RESEARCH",
+      BUSINESS: "BUSINESS",
+      CONTENT_CREATOR: "CONTENT_CREATOR",
+      STARTUP_FOUNDER: "STARTUP_FOUNDER"
+    };
 
-    const rawMode = body.promptMode ? body.promptMode.replace(/-/g, '_').toUpperCase() : null;
-    const rawLevel = body.rewriteLevel ? body.rewriteLevel.toUpperCase() : null;
+    const LEVEL_MAP: Record<string, string | null> = {
+      AUTO: null,
+      LIGHT: "LIGHT",
+      MEDIUM: "MEDIUM",
+      AGGRESSIVE: "AGGRESSIVE",
+      EXPERT: "EXPERT"
+    };
 
-    const promptMode = VALID_MODES.includes(rawMode) ? rawMode : null;
-    const rewriteLevel = VALID_LEVELS.includes(rawLevel) ? rawLevel : null;
+    const rawMode = (body.promptMode || body.mode || "").toString().replace(/-/g, "_").toUpperCase();
+    const rawLevel = (body.rewriteLevel || "").toString().toUpperCase();
+
+    const promptMode = MODE_MAP[rawMode] ?? null;
+    const rewriteLevel = LEVEL_MAP[rawLevel] ?? null;
 
     const { data, error: insertError } = await supabaseUserClient.from('PromptHistory').insert({
       id: crypto.randomUUID(),
       userId: user.id,
       originalPrompt: body.originalPrompt,
       optimizedPrompt: body.optimizedPrompt,
-      platformUsed: body.platformUsed || "api",
+      platformUsed: body.platformUsed ?? "extension",
       promptMode,
       rewriteLevel,
-      responseTime: body.responseTime || null,
+      responseTime: Number(body.responseTime) || null,
       isStarred: false
     }).select('id').single();
 

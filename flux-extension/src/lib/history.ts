@@ -63,8 +63,9 @@ export const useHistory = create<HistoryState>((set, get) => ({
     
     try {
       const settings = await getSettings();
-      if (settings.apiBaseUrl && settings.accessToken) {
-        const endpoint = `${settings.apiBaseUrl.replace(/\/$/, "")}/api/history?limit=${MAX_ENTRIES}`;
+      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
+      if (settings.accessToken) {
+        const endpoint = `${API_BASE}/api/history?limit=${MAX_ENTRIES}`;
         const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${settings.accessToken}` }
         });
@@ -112,11 +113,11 @@ export const useHistory = create<HistoryState>((set, get) => ({
     {
       try {
         const settings = await getSettings();
-        const apiBaseUrl = auth?.apiBaseUrl || settings.apiBaseUrl;
+        const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
         const accessToken = auth?.accessToken || settings.accessToken;
 
-        if (apiBaseUrl && accessToken) {
-          const endpoint = `${apiBaseUrl.replace(/\/$/, "")}/api/history`;
+        if (accessToken) {
+          const endpoint = `${API_BASE}/api/history`;
           const res = await fetch(endpoint, {
             method: "POST",
             headers: {
@@ -175,12 +176,11 @@ export const useHistory = create<HistoryState>((set, get) => ({
       const settings = await getSettings();
       const CORRECT_URL = "https://prompweb.vercel.app";
       const wrongUrls = ["https://api.promptly-optimizer.app"];
-      const rawUrl = settings.apiBaseUrl;
-      const apiBaseUrl = (!rawUrl || wrongUrls.includes(rawUrl)) ? CORRECT_URL : rawUrl;
+      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
       const accessToken = settings.accessToken;
 
-      if (apiBaseUrl && accessToken) {
-        fetch(`${apiBaseUrl}/api/history`, {
+      if (accessToken) {
+        fetch(`${API_BASE}/api/history`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
           body: JSON.stringify({ id, isStarred: newStarred })

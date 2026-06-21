@@ -1,10 +1,13 @@
 {
   "name": "promptly-monorepo",
-  "version": "1.0.0",
   "private": true,
+  "packageManager": "npm@11",
   "workspaces": [
     "apps/*",
     "flux-extension",
     "packages/*"
-  ]
+  ],
+  "overrides": {
+    "lightningcss": "1.32.0"
+  }
 }

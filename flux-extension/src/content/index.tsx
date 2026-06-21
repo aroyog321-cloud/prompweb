@@ -287,10 +287,10 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
       // Direct server sync — don't depend on history store auth state
       const token = settings.accessToken;
-      const apiBaseUrl = settings.apiBaseUrl || "https://prompweb.vercel.app";
+      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
       
       if (token) {
-        fetch(`${apiBaseUrl.replace(/\/$/, "")}/api/history`, {
+        fetch(`${API_BASE}/api/history`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({
