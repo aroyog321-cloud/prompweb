@@ -1,5 +1,5 @@
 {
-  "name": "promptly-monorepo",
+  "name": "proenpt-monorepo",
   "private": true,
   "packageManager": "npm@11",
   "workspaces": [

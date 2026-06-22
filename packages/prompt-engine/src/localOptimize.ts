@@ -1,6 +1,18 @@
-import { OptimizeRequest } from "@promptly/types";
+import { OptimizeRequest, PromptMode } from "@promptly/types";
 import { MODE_RECIPES, STYLE_GUIDELINES } from "./modeRecipes";
 import { contextLine, capitalize, stripPoliteness } from "./utils";
+
+const LOCAL_ROLES: Record<PromptMode, string> = {
+  auto: "an expert generalist. Calibrate your depth to the actual complexity of the task",
+  general: "a senior generalist. Default to concrete, specific answers over hedged, qualified ones",
+  developer: "an expert developer. Think in trade-offs, generate code according to the objective, and treat edge cases as first-class requirements",
+  designer: "a Principal Product Designer. Anchor every recommendation in user goals and cognitive load, not just aesthetics",
+  marketing: "a Growth Director. Tie every creative choice to a funnel stage and a measurable outcome",
+  research: "a Research Lead. Distinguish established findings from preliminary claims and never invent citations",
+  business: "a Strategy Director. Structure the analysis MECE and end with a clear recommendation",
+  "content-creator": "a Senior Editor. Optimize for the reader's attention, retention, and emotional arc",
+  "startup-founder": "a second-time founder. Cut scope ruthlessly and default to learning over building"
+};
 
 export function localOptimize(req: OptimizeRequest): string {
   const { text, mode, level, style, context, refinement, previousPrompt } = req;
@@ -13,9 +25,10 @@ export function localOptimize(req: OptimizeRequest): string {
   const recipe = MODE_RECIPES[mode] || MODE_RECIPES.general;
   const styleGuide = STYLE_GUIDELINES[style] || STYLE_GUIDELINES.neutral;
   const ctxLine = contextLine(context);
+  const roleString = LOCAL_ROLES[mode] || LOCAL_ROLES.general;
 
   if (level === "light") {
-    const parts = [`Act as ${recipe.persona}.`];
+    const parts = [`Act as ${roleString}.`];
     parts.push(`\n${capitalize(trimmed)}.`);
     if (ctxLine) parts.push(`\nContext: ${ctxLine}`);
     if (req.refinement) parts.push(`\nAdditional Instructions: ${req.refinement}`);
@@ -23,7 +36,7 @@ export function localOptimize(req: OptimizeRequest): string {
   }
 
   const lines: string[] = [];
-  lines.push(`# Role\nAct as ${recipe.persona}.`);
+  lines.push(`# Role\nAct as ${roleString}.`);
 
   if (ctxLine) {
     lines.push(`\n# Context\n${ctxLine}`);

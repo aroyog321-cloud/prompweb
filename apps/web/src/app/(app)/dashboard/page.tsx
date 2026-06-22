@@ -2,22 +2,31 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { createClient } from '../../../lib/supabaseBrowser'
 
 import { BarChart2, Cpu, ArrowRight, MoreVertical, Globe, MessageSquare, Bot } from 'lucide-react'
 
+const Shimmer = () => (
+  <motion.div
+    className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent"
+    animate={{ translateX: ['-100%', '200%'] }}
+    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+  />
+)
+
 const DashboardSkeleton = () => (
-  <main className="min-h-[calc(100vh-73px)] pb-32 relative overflow-hidden bg-[#09090b] text-white">
-    <div className="max-w-5xl mx-auto px-6 py-12 space-y-12 animate-pulse">
+  <main className="min-h-[calc(100vh-73px)] pb-32 relative overflow-hidden bg-background text-foreground">
+    <div className="max-w-5xl mx-auto px-6 py-12 space-y-12">
       <div className="flex flex-col gap-4">
-        <div className="h-10 w-80 bg-white/5 rounded-lg" />
-        <div className="h-5 w-96 bg-white/5 rounded-lg" />
+        <div className="h-10 w-80 bg-promptly-surface rounded-lg relative overflow-hidden"><Shimmer /></div>
+        <div className="h-5 w-96 bg-promptly-surface rounded-lg relative overflow-hidden"><Shimmer /></div>
       </div>
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="h-[200px] bg-[#1a1a1c] rounded-2xl" />
-        <div className="h-[200px] bg-[#1a1a1c] rounded-2xl" />
+        <div className="h-[200px] bg-promptly-surface rounded-2xl relative overflow-hidden"><Shimmer /></div>
+        <div className="h-[200px] bg-promptly-surface rounded-2xl relative overflow-hidden"><Shimmer /></div>
       </div>
-      <div className="h-[300px] w-full bg-[#1a1a1c] rounded-2xl" />
+      <div className="h-[300px] w-full bg-promptly-surface rounded-2xl relative overflow-hidden"><Shimmer /></div>
     </div>
   </main>
 )
@@ -173,10 +182,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-73px)] pb-32 bg-[#09090b] text-white font-sans">
+    <main className="min-h-[calc(100vh-73px)] pb-32 bg-background text-foreground font-sans">
       
       {/* Background Gradients (Subtle) */}
-      <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-0 left-0 w-[600px] h-[400px] bg-promptly-glow opacity-30 rounded-full pointer-events-none" />
 
       <div className="max-w-[1000px] mx-auto px-6 py-12 relative z-10">
         
@@ -258,12 +267,33 @@ export default function DashboardPage() {
           
           <div className="flex flex-col">
             {recentPrompts.length === 0 ? (
-              <div className="px-6 py-8 text-center text-zinc-500 text-sm">
-                No recent optimizations found. Try optimizing a prompt in the extension!
-              </div>
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="px-6 py-12 flex flex-col items-center justify-center text-center gap-4"
+              >
+                <div className="size-16 rounded-full bg-promptly-surface border border-promptly-border flex items-center justify-center relative shadow-[0_0_20px_rgba(139,108,255,0.15)]">
+                  <Bot size={28} className="text-promptly-violet" />
+                  <motion.div 
+                    className="absolute inset-0 rounded-full border border-promptly-cyan/30"
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-zinc-200 font-medium text-base mb-1">✨ Start optimizing prompts</h3>
+                  <p className="text-zinc-500 text-sm max-w-sm">Your prompt history will appear here. Try optimizing a prompt in the extension to see it live.</p>
+                </div>
+              </motion.div>
             ) : (
               recentPrompts.map((prompt, idx) => (
-              <div key={prompt.id} className={`px-6 py-5 flex items-center justify-between hover:bg-white/[0.02] transition-colors ${idx !== recentPrompts.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
+              <motion.div 
+                key={prompt.id} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(idx * 0.05, 0.5), duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className={`px-6 py-5 flex items-center justify-between hover:bg-promptly-surface hover:scale-[1.005] transition-all duration-300 ${idx !== recentPrompts.length - 1 ? 'border-b border-promptly-border' : ''}`}
+              >
                 <div className="flex items-center gap-4">
                   <div className="size-10 rounded-xl bg-[#242427] border border-white/[0.04] flex items-center justify-center shrink-0">
                     {getPlatformIcon(prompt.platformUsed)}
@@ -296,11 +326,11 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-zinc-500 uppercase tracking-wider mt-0.5">Latency</p>
                   </div>
                   
-                  <button className="text-zinc-600 hover:text-zinc-300 transition-colors p-1">
+                  <button className="text-zinc-600 hover:text-promptly-cyan transition-colors p-1">
                     <MoreVertical size={18} />
                   </button>
                 </div>
-              </div>
+              </motion.div>
               ))
             )}
           </div>

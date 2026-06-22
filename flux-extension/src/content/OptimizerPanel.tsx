@@ -490,25 +490,21 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
               </>
             ) : optimizedText ? (
               <>
-                <button className="promptly-btn-secondary promptly-btn-with-kbd" onClick={() => { setOptimizedText(null); setShowDiff(false); }} title="Discard (Cmd+D)">
-                  <span>Discard</span>
-                  <kbd className="promptly-kbd">⌘D</kbd>
+                <button className="promptly-btn-secondary" onClick={() => { setOptimizedText(null); setShowDiff(false); }} title="Discard (Cmd+D)">
+                  Discard
                 </button>
-                <button className="promptly-btn-secondary promptly-btn-with-kbd" onClick={() => {
+                <button className="promptly-btn-secondary" onClick={() => {
                   if (optimizedText) {
                     navigator.clipboard.writeText(optimizedText);
                     setToast("Copied ✓");
                     setTimeout(() => setToast(null), 2000);
                   }
                 }} title="Copy to clipboard (Cmd+C)">
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', marginRight: 4 }}>
-                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                    </svg>
-                    Copy
-                  </span>
-                  <kbd className="promptly-kbd">⌘C</kbd>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', marginRight: 4 }}>
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                  </svg>
+                  Copy
                 </button>
                 <button className="promptly-btn-secondary" onClick={() => handleOptimize()} title="Generate another variation">
                   <svg className="icon-regenerate" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline-block', marginRight: 4, verticalAlign: 'text-bottom' }}>
@@ -517,20 +513,18 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
                   </svg>
                   Regenerate
                 </button>
-                <button className="promptly-btn-primary promptly-btn-with-kbd" onClick={handleAccept} title="Insert into chat (Cmd+Enter)">
-                  <span>Insert Optimized</span>
-                  <kbd className="promptly-kbd" style={{ background: 'rgba(0,0,0,0.15)', color: 'inherit', borderColor: 'transparent' }}>⌘↵</kbd>
+                <button className="promptly-btn-primary" onClick={handleAccept} title="Insert into chat (Cmd+Enter)">
+                  Insert Optimized
                 </button>
               </>
             ) : (
               <button 
-                className="promptly-btn-primary promptly-btn-with-kbd" 
+                className="promptly-btn-primary" 
                 onClick={() => handleOptimize()}
                 disabled={!text.trim()}
-                style={{ width: "100%", justifyContent: "space-between" }}
+                style={{ width: "100%" }}
               >
-                <span>Optimize Prompt</span>
-                <kbd className="promptly-kbd" style={{ background: 'rgba(0,0,0,0.15)', color: 'inherit', borderColor: 'transparent' }}>⌘↵</kbd>
+                Optimize Prompt
               </button>
             )}
           </div>

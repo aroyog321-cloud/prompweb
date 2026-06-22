@@ -4,8 +4,9 @@ import { buildSystemPrompt, buildUserPrompt, localOptimize } from '@promptly/pro
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_KEY_PREMIUM = process.env.GEMINI_API_KEY_PREMIUM || process.env.GEMINI_API_KEY;
@@ -159,9 +160,11 @@ export async function POST(request: Request) {
       }
     }
 
-    const supabaseUserClient = createClient(supabaseUrl, supabaseKey, {
+    const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
+
+    const supabaseAdmin = supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : supabaseUserClient;
 
     let tier = 'free';
     if (user && !supabaseUrl.includes('placeholder')) {
@@ -231,7 +234,7 @@ export async function POST(request: Request) {
         .single();
         
       if (stats) {
-        const { error: usageError } = await supabaseUserClient
+        const { error: usageError } = await supabaseAdmin
           .from('usage_stats')
           .update({
             total_requests_today: (stats.total_requests_today || 0) + 1,
@@ -255,16 +258,24 @@ export async function POST(request: Request) {
       }
 
       // Pass 2: Critique
-      const critiquePrompt = `Apply this rubric point-by-point to the draft below. If any check fails, output a REVISED version that fixes the issues. If it already passes all checks, output it unchanged. Do not explain.
+      const critiquePrompt = `Apply this failure-mode rubric to the draft below. If any check fails, output a REVISED version that fixes the issues. If it already passes all checks, output it unchanged. Do not explain.
 
 RUBRIC:
-- ROLE: Specific expert persona with concrete skills (not "an expert" / "an assistant")
-- CONTEXT: Names who, what, why — concrete, not generic
-- OBJECTIVE: Single sharp deliverable with measurable criteria
-- CONSTRAINTS: ≥2 negative constraints (Do NOT / Avoid)
-- OUTPUT FORMAT: Exact structure (sections, length, format)
-- SUCCESS CRITERIA: What "done well" looks like
-${body.level === "expert" ? "- EDGE CASES: Failure modes the model should watch for" : ""}
+- ROLE: Must be a specific person with opinions, not a generic title. 
+  Bad: "an experienced data scientist." 
+  Fix: Name the specific experience, constraints, and philosophy they hold.
+- CONTEXT: Must contain concrete facts or labeled assumptions, not category descriptions.
+  Bad: "a B2B software company." 
+  Fix: Inject concrete details (e.g., "12-person Series A SaaS").
+- OBJECTIVE: Must have measurable success criteria.
+  Bad: "write a good report." 
+  Fix: Specify word count, structure, and what the report should achieve.
+- CONSTRAINTS: Must have ≥2 explicit negative (Do NOT) constraints naming specific clichés or failure modes to avoid.
+  Bad: "Be concise." 
+  Fix: "Do NOT use passive voice or exceed 300 words."
+- OUTPUT FORMAT: Must specify exact structure, sections, and length.
+- SUCCESS CRITERIA: Must define what a high-quality output looks like to a skeptic.
+${body.level === "expert" ? "- EDGE CASES: Must explicitly name 2-3 likely failure modes for the model to watch out for." : ""}
 
 DRAFT:
 ${draftText}`;

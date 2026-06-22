@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Promptly Prompt Optimizer",
-  "short_name": "Promptly",
+  "name": "Proenpt Prompt Optimizer",
+  "short_name": "Proenpt",
   "version": "0.1.0",
   "description": "Turn rough instructions into expert-level prompts, right inside ChatGPT, Claude, Gemini, Perplexity, Grok and DeepSeek.",
   "icons": {
@@ -33,7 +33,7 @@
     "http://localhost:3000/*",
     "http://127.0.0.1:3000/*",
     "https://*.vercel.app/*",
-    "https://*.promptly.com/*"
+    "https://*.proenpt.com/*"
   ],
   "content_scripts": [
     {
@@ -55,8 +55,8 @@
         "http://localhost:3000/*",
         "http://127.0.0.1:3000/*",
         "https://*.vercel.app/*",
-        "https://*.promptly.com/*",
-        "https://promptly.com/*"
+        "https://*.proenpt.com/*",
+        "https://proenpt.com/*"
       ],
       "js": ["src/content/authSync.ts"],
       "run_at": "document_start"
@@ -68,7 +68,7 @@
         "default": "Ctrl+Shift+P",
         "mac": "Command+Shift+P"
       },
-      "description": "Optimize the current prompt with Promptly"
+      "description": "Optimize the current prompt with Proenpt"
     },
     "auto-optimize-prompt": {
       "suggested_key": {

@@ -1,13 +1,40 @@
 @import "tailwindcss";
 
-@theme inline {
+:root {
   --font-sans: var(--font-inter);
-  --font-display: var(--font-plus-jakarta-sans);
+  --font-display: var(--font-space-grotesk);
+
+  --color-promptly-void: #0B0B12;
+  --color-promptly-surface: rgba(255,255,255,0.05);
+  --color-promptly-border: rgba(255,255,255,0.10);
+  --color-promptly-text: #F2F2F8;
+  --color-promptly-muted: #9594B3;
+  --color-promptly-cyan: #4FE6E0;
+  --color-promptly-violet: #8B6CFF;
+  --color-promptly-magenta: #FF5FB8;
+
+  --background-image-promptly-ring: conic-gradient(from 180deg, #4FE6E0, #8B6CFF, #FF5FB8, #4FE6E0);
+  --background-image-promptly-glow: radial-gradient(circle at 30% 30%, rgba(139,108,255,0.35), transparent 60%);
+
+  --background: var(--color-promptly-void);
+  --foreground: var(--color-promptly-text);
 }
 
-:root {
-  --background: #09090b;
-  --foreground: #ffffff;
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
+
+  --color-promptly-void: var(--color-promptly-void);
+  --color-promptly-surface: var(--color-promptly-surface);
+  --color-promptly-border: var(--color-promptly-border);
+  --color-promptly-text: var(--color-promptly-text);
+  --color-promptly-muted: var(--color-promptly-muted);
+  --color-promptly-cyan: var(--color-promptly-cyan);
+  --color-promptly-violet: var(--color-promptly-violet);
+  --color-promptly-magenta: var(--color-promptly-magenta);
+
+  --background-image-promptly-ring: var(--background-image-promptly-ring);
+  --background-image-promptly-glow: var(--background-image-promptly-glow);
 }
 
 body {

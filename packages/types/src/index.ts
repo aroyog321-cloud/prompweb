@@ -71,7 +71,7 @@ export const DEFAULT_SETTINGS: PromptlySettings = {
   defaultLevel: "medium",
   defaultStyle: "neutral",
   shortcutEnabled: true,
-  apiBaseUrl: "https://prompweb.vercel.app",
+  apiBaseUrl: "https://proenpt.vercel.app",
   apiKey: "",
   categorizerApiUrl: "",
   categorizerApiKey: "",

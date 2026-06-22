@@ -1,4 +1,5 @@
 import { NavigationManager } from "../../components/NavigationManager";
+import { GlobalAuthSync } from "../../components/GlobalAuthSync";
 
 export default function AppLayout({
   children,
@@ -8,6 +9,7 @@ export default function AppLayout({
   return (
     <>
       <NavigationManager />
+      <GlobalAuthSync />
       {children}
     </>
   );

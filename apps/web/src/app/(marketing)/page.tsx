@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { AreaChart, Area, XAxis, ResponsiveContainer } from "recharts";
 import {
   Zap, Shield, Globe, Terminal, BarChart2,
@@ -66,29 +67,15 @@ const faqs = [
 ];
 
 function ScrollReveal({ children, delay = 0 }: { children: ReactNode, delay?: number }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setIsVisible(true);
-        observer.disconnect();
-      }
-    }, { threshold: 0.1 });
-    
-    if (ref.current) observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, []);
-  
   return (
-    <div 
-      ref={ref} 
-      className={`transition-all duration-1000 ease-[cubic-bezier(0.16,1,0.3,1)] transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}
-      style={{ transitionDelay: `${delay}ms` }}
+    <motion.div 
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-20px" }}
+      transition={{ duration: 0.5, delay: delay / 1000, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }
 
@@ -120,20 +107,21 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div className="relative overflow-x-hidden bg-[#09090b] text-white selection:bg-blue-500/30">
+    <div className="relative overflow-x-hidden bg-background text-foreground selection:bg-promptly-cyan/30">
       {/* ── Ambient glows ── */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
-        <div
-          className="absolute -top-[20%] -left-[10%] w-[80vw] h-[80vw] rounded-full opacity-20 mix-blend-screen"
-          style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 60%)", filter: "blur(100px)" }}
-        />
-        <div
-          className="absolute top-[30%] -right-[20%] w-[70vw] h-[70vw] rounded-full opacity-20 mix-blend-screen"
-          style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 60%)", filter: "blur(120px)" }}
-        />
-        <div
-          className="absolute -bottom-[20%] left-[10%] w-[60vw] h-[60vw] rounded-full opacity-10 mix-blend-screen"
-          style={{ background: "radial-gradient(circle, #06b6d4 0%, transparent 60%)", filter: "blur(100px)" }}
+        <motion.div
+          animate={{ 
+            backgroundPosition: ['0% 0%', '100% 100%', '0% 100%', '100% 0%', '0% 0%'],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+          className="absolute inset-0 opacity-40 mix-blend-screen"
+          style={{ 
+            background: "var(--background-image-promptly-glow)", 
+            filter: "blur(120px)",
+            backgroundSize: '200% 200%' 
+          }}
         />
       </div>
 
@@ -152,12 +140,9 @@ export default function LandingPage() {
 
         <ScrollReveal delay={100}>
           <h1
-            className="font-display text-5xl md:text-7xl lg:text-[88px] font-extrabold leading-[1.05] tracking-tight mb-6 max-w-5xl mx-auto"
+            className="font-display text-5xl md:text-7xl lg:text-[88px] font-extrabold leading-[1.05] tracking-tight mb-6 max-w-5xl mx-auto text-transparent bg-clip-text"
             style={{
-              background: "linear-gradient(135deg, #ffffff 30%, #a78bfa 60%, #60a5fa 90%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
+              backgroundImage: "linear-gradient(135deg, #ffffff 30%, var(--color-promptly-violet) 60%, var(--color-promptly-cyan) 90%)",
             }}
           >
             Supercharge your AI prompts instantly.
@@ -174,12 +159,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center">
             <Link
               href="/login"
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm transition-all hover:-translate-y-0.5 relative overflow-hidden group text-promptly-void"
               style={{
-                background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-                boxShadow: "0 0 40px rgba(59,130,246,0.5), 0 0 80px rgba(59,130,246,0.2)",
+                background: "var(--color-promptly-cyan)",
+                boxShadow: "0 4px 20px rgba(79,230,224,0.4)",
               }}
             >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
               <Zap size={15} />
               Start for free
             </Link>
@@ -360,25 +346,22 @@ export default function LandingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => (
             <ScrollReveal key={f.label} delay={i * 100}>
-              <div
-                className="group relative h-full p-6 rounded-2xl border border-white/[0.07] hover:border-white/[0.14] transition-all duration-300"
-                style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(10px)" }}
+              <motion.div
+                whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="group relative h-full p-6 rounded-2xl border border-promptly-border hover:border-promptly-cyan/50 transition-colors duration-300 cursor-default shadow-glass"
+                style={{ background: "var(--color-promptly-surface)", backdropFilter: "blur(10px)", transformPerspective: 1000 }}
               >
                 <div
-                  className="mb-4 size-10 rounded-xl flex items-center justify-center"
-                  style={{ background: `${f.color}18`, border: `1px solid ${f.color}30` }}
+                  className="mb-4 size-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10"
                 >
-                  <f.icon size={18} style={{ color: f.color }} />
+                  <f.icon size={18} className="text-promptly-cyan group-hover:text-white transition-colors" />
                 </div>
                 <h3 className="font-display text-white font-semibold mb-2">
                   {f.label}
                 </h3>
                 <p className="text-sm text-zinc-500 leading-relaxed">{f.desc}</p>
-                <div
-                  className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-                  style={{ background: `radial-gradient(circle at 50% 0%, ${f.color}08, transparent 60%)` }}
-                />
-              </div>
+              </motion.div>
             </ScrollReveal>
           ))}
         </div>

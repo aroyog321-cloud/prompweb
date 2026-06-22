@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
 
 function getAuthToken(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
     }
 
-    const supabaseUserClient = createClient(supabaseUrl, supabaseKey, {
+    const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const supabaseUserClient = createClient(supabaseUrl, supabaseKey, {
+    const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
@@ -135,7 +136,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Missing id or isStarred" }, { status: 400 });
     }
 
-    const supabaseUserClient = createClient(supabaseUrl, supabaseKey, {
+    const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 

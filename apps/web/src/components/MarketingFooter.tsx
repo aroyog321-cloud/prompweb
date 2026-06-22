@@ -9,7 +9,7 @@ export function MarketingFooter() {
               style={{ background: "linear-gradient(135deg, #3b82f6, #8b5cf6)" }}
             />
             <span className="font-display text-sm font-semibold text-white">
-              Promptly
+              Proenpt
             </span>
           </div>
           <p className="text-xs text-zinc-600 max-w-xs">
@@ -40,7 +40,7 @@ export function MarketingFooter() {
       </div>
 
       <div className="max-w-6xl mx-auto mt-10 pt-6 border-t border-white/[0.05] flex flex-col md:flex-row items-center justify-between gap-2">
-        <p className="text-xs text-zinc-700">© 2026 Promptly AI. All rights reserved.</p>
+        <p className="text-xs text-zinc-700">© 2026 Proenpt AI. All rights reserved.</p>
         <p className="text-xs text-zinc-700">
           Status: <span className="text-green-500">All systems operational</span>
         </p>

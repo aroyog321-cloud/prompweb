@@ -38,6 +38,24 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function bootstrap(platform: PlatformConfig) {
+  // Guard: if the extension context has been invalidated (e.g. after a reload
+  // while the tab was already open), chrome.runtime.id becomes undefined.
+  // Attempting to call chrome.storage / chrome.runtime.getURL after this throws
+  // "Extension context invalidated" and crashes the content script.
+  // We bail out early so the page itself is unaffected.
+  if (!chrome.runtime?.id) {
+    console.warn("[Promptly] Extension context invalidated. Refresh the tab to re-enable Promptly.");
+    return;
+  }
+
+  // Teardown any existing mount from a previous injection (happens during Vite
+  // HMR / crxjs hot-reload in development). Without this, React 18 throws on
+  // createRoot() being called on an already-mounted root.
+  const existing = document.getElementById("promptly-prompt-optimizer-root");
+  if (existing) {
+    existing.remove();
+  }
+
   const host = document.createElement("div");
   host.id = "promptly-prompt-optimizer-root";
   host.setAttribute("data-theme", window.location.hostname.replace(/^www\./, ''));
@@ -287,7 +305,7 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
       // Direct server sync — don't depend on history store auth state
       const token = settings.accessToken;
-      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
+      const API_BASE = process.env.NODE_ENV === "production" ? "https://proenpt.vercel.app" : "http://localhost:3000";
       
       if (token) {
         fetch(`${API_BASE}/api/history`, {
@@ -538,6 +556,11 @@ const DraggablePanel: React.FC<{
 };
 
 (() => {
+  // Bail out immediately if the extension context is already invalidated.
+  // This can happen if the extension was reloaded/updated while this tab
+  // was open and the old content script is still running.
+  if (typeof chrome === "undefined" || !chrome.runtime?.id) return;
+
   const platform = detectPlatform(window.location.hostname);
   if (platform) {
     bootstrap(platform);

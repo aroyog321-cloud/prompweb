@@ -57,7 +57,14 @@ export const FloatingButton: React.FC<FloatingButtonProps> = ({
   };
 
   const stateClass = promptState === "vague" ? "pulse-vague" : promptState === "ready" ? "glow-ready" : "";
-  const imageUrl = chrome.runtime.getURL("public/promptly-orb.png");
+  
+  let imageUrl = "";
+  try {
+    imageUrl = chrome.runtime.getURL("public/promptly-orb.png");
+  } catch (e) {
+    // Extension context invalidated — fail gracefully and unmount
+    return null;
+  }
 
   return (
     <button

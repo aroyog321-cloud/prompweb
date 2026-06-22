@@ -11,7 +11,7 @@ chrome.commands.onCommand.addListener(async (command) => {
 });
 
 chrome.runtime.onInstalled.addListener((details) => {
-  const CORRECT_URL = "https://prompweb.vercel.app";
+  const CORRECT_URL = "https://proenpt.vercel.app";
   const STORAGE_KEY = "promptly_settings_v1";
 
   if (details.reason === "install") {
@@ -50,7 +50,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 // Also fix wrong URL on every browser startup (not just install/update)
 function migrateApiBaseUrl() {
-  const CORRECT_URL = "https://prompweb.vercel.app";
+  const CORRECT_URL = "https://proenpt.vercel.app";
   const STORAGE_KEY = "promptly_settings_v1";
   const wrongUrls = ["https://api.promptly-optimizer.app"];
 

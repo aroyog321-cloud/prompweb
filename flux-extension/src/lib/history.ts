@@ -21,9 +21,12 @@ interface HistoryState {
   remove: (id: string) => Promise<void>;
   clear: () => Promise<void>;
   toggleStar: (id: string) => Promise<void>;
+  drainPendingQueue: (auth: { accessToken: string; apiBaseUrl: string }) => Promise<void>;
 }
 
 const STORAGE_KEY = "promptly_history_v1";
+// Entries that failed to POST (no token at the time) — retried when token arrives
+const PENDING_KEY = "promptly_pending_sync_v1";
 const MAX_ENTRIES = 50;
 
 function newId(): string {
@@ -32,7 +35,14 @@ function newId(): string {
 
 function isChromeStorageAvailable(): boolean {
   try {
-    return typeof chrome !== "undefined" && !!chrome.storage?.local;
+    // chrome.runtime.id becomes undefined when the extension context is invalidated
+    // (e.g. after a reload/update while the tab is still open). Checking it here
+    // prevents the cryptic "Extension context invalidated" error from bubbling up.
+    return (
+      typeof chrome !== "undefined" &&
+      !!chrome.runtime?.id &&
+      !!chrome.storage?.local
+    );
   } catch {
     return false;
   }
@@ -40,15 +50,82 @@ function isChromeStorageAvailable(): boolean {
 
 async function readStorage(): Promise<HistoryEntry[]> {
   if (!isChromeStorageAvailable()) return [];
-  const result = await chrome.storage.local.get(STORAGE_KEY);
-  const raw = result?.[STORAGE_KEY];
-  if (!Array.isArray(raw)) return [];
-  return raw as HistoryEntry[];
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEY);
+    const raw = result?.[STORAGE_KEY];
+    if (!Array.isArray(raw)) return [];
+    return raw as HistoryEntry[];
+  } catch {
+    return [];
+  }
 }
 
 async function writeStorage(entries: HistoryEntry[]): Promise<void> {
   if (!isChromeStorageAvailable()) return;
-  await chrome.storage.local.set({ [STORAGE_KEY]: entries });
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEY]: entries });
+  } catch {
+    // Extension context may have been invalidated — fail silently
+  }
+}
+
+async function readPendingQueue(): Promise<Array<Omit<HistoryEntry, "id" | "ts"> & { id: string; ts: number }>> {
+  if (!isChromeStorageAvailable()) return [];
+  try {
+    const result = await chrome.storage.local.get(PENDING_KEY);
+    const raw = result?.[PENDING_KEY];
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+
+async function writePendingQueue(queue: any[]): Promise<void> {
+  if (!isChromeStorageAvailable()) return;
+  try {
+    await chrome.storage.local.set({ [PENDING_KEY]: queue });
+  } catch { /* silent */ }
+}
+
+async function addToPendingQueue(entry: HistoryEntry): Promise<void> {
+  const queue = await readPendingQueue();
+  // Avoid duplicates by id
+  if (queue.some((e) => e.id === entry.id)) return;
+  queue.push(entry);
+  // Keep queue bounded at 50 so it doesn't grow unbounded on long offline stretches
+  await writePendingQueue(queue.slice(-50));
+}
+
+async function postEntryToServer(
+  entry: HistoryEntry,
+  auth: { accessToken: string; apiBaseUrl: string }
+): Promise<{ serverId?: string; ok: boolean }> {
+  try {
+    const endpoint = `${auth.apiBaseUrl.replace(/\/$/, "")}/api/history`;
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth.accessToken}`,
+      },
+      body: JSON.stringify({
+        originalPrompt: entry.text,
+        optimizedPrompt: entry.optimized,
+        platformUsed: entry.platform,
+        promptMode: entry.mode,
+        rewriteLevel: entry.level,
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { ok: true, serverId: data?.id };
+    }
+    console.warn("[Promptly] Server POST returned", res.status);
+    return { ok: false };
+  } catch (e) {
+    console.warn("[Promptly] Server POST failed:", e);
+    return { ok: false };
+  }
 }
 
 import { getSettings } from "./storage";
@@ -60,93 +137,124 @@ export const useHistory = create<HistoryState>((set, get) => ({
   hydrate: async () => {
     const localEntries = await readStorage();
     let finalEntries = [...localEntries];
-    
+
     try {
       const settings = await getSettings();
-      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
-      if (settings.accessToken) {
-        const endpoint = `${API_BASE}/api/history?limit=${MAX_ENTRIES}`;
+      if (settings.apiBaseUrl && settings.accessToken) {
+        const endpoint = `${settings.apiBaseUrl.replace(/\/$/, "")}/api/history?limit=${MAX_ENTRIES}`;
         const res = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${settings.accessToken}` }
+          headers: { Authorization: `Bearer ${settings.accessToken}` },
         });
         if (res.ok) {
           const serverEntries = await res.json();
-          // Merge server and local, deduping by ID or text
           const merged = new Map<string, HistoryEntry>();
           serverEntries.forEach((se: any) => {
-             merged.set(se.id, {
-               id: se.id,
-               text: se.originalPrompt,
-               optimized: se.optimizedPrompt,
-               platform: se.platformUsed,
-               mode: (se.promptMode || "auto").toLowerCase(),
-               level: (se.rewriteLevel || "medium").toLowerCase(),
-               ts: new Date(se.createdAt).getTime(),
-               source: "api"
-             });
+            merged.set(se.id, {
+              id: se.id,
+              text: se.originalPrompt,
+              optimized: se.optimizedPrompt,
+              platform: se.platformUsed,
+              mode: (se.promptMode || "auto").toLowerCase(),
+              level: (se.rewriteLevel || "medium").toLowerCase(),
+              ts: new Date(se.createdAt).getTime(),
+              source: "api",
+            });
           });
-          localEntries.forEach(le => {
-             if (!merged.has(le.id)) merged.set(le.id, le);
+          localEntries.forEach((le) => {
+            if (!merged.has(le.id)) merged.set(le.id, le);
           });
-          finalEntries = Array.from(merged.values()).sort((a, b) => b.ts - a.ts).slice(0, MAX_ENTRIES);
+          finalEntries = Array.from(merged.values())
+            .sort((a, b) => b.ts - a.ts)
+            .slice(0, MAX_ENTRIES);
           await writeStorage(finalEntries);
+
+          // Now that we have a valid token, drain any queued entries that
+          // failed to POST when the token was not yet available.
+          await get().drainPendingQueue({
+            accessToken: settings.accessToken,
+            apiBaseUrl: settings.apiBaseUrl,
+          });
         }
       }
     } catch (e) {
-      console.warn("Failed to hydrate history from server", e);
+      console.warn("[Promptly] Failed to hydrate history from server", e);
     }
-    
+
     set({ entries: finalEntries, hydrated: true });
+  },
+
+  /**
+   * drainPendingQueue — call this whenever a fresh access token becomes
+   * available. It reads the local pending queue (entries that were saved
+   * locally but couldn't be POSTed because no token existed at the time)
+   * and sends each one to the server, clearing the queue on success.
+   */
+  drainPendingQueue: async (auth) => {
+    if (!auth.accessToken || !auth.apiBaseUrl) return;
+    const queue = await readPendingQueue();
+    if (queue.length === 0) return;
+
+    console.log(`[Promptly] Draining ${queue.length} pending history entries to server…`);
+    const remaining: any[] = [];
+
+    for (const entry of queue) {
+      const { ok } = await postEntryToServer(entry as HistoryEntry, auth);
+      if (!ok) remaining.push(entry);
+    }
+
+    await writePendingQueue(remaining);
+    if (remaining.length < queue.length) {
+      console.log(
+        `[Promptly] Synced ${queue.length - remaining.length} pending entries. ${remaining.length} still queued.`
+      );
+    }
   },
 
   add: async (partial, auth) => {
     const entry: HistoryEntry = {
       id: newId(),
       ts: Date.now(),
-      ...partial
+      ...partial,
     };
     const next = [entry, ...get().entries].slice(0, MAX_ENTRIES);
     set({ entries: next });
     await writeStorage(next);
 
-    // Always sync to backend to ensure it's logged
-    {
-      try {
-        const settings = await getSettings();
-        const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
-        const accessToken = auth?.accessToken || settings.accessToken;
+    // Attempt to POST to the server
+    try {
+      const settings = await getSettings();
+      const apiBaseUrl = auth?.apiBaseUrl || settings.apiBaseUrl;
+      const accessToken = auth?.accessToken || settings.accessToken;
 
-        if (accessToken) {
-          const endpoint = `${API_BASE}/api/history`;
-          const res = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-              originalPrompt: entry.text,
-              optimizedPrompt: entry.optimized,
-              platformUsed: entry.platform,
-              promptMode: entry.mode,
-              rewriteLevel: entry.level
-            })
-          });
-          if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            if (data?.id) {
-              const updated = get().entries.map(e => e === entry ? { ...e, id: data.id } : e);
-              set({ entries: updated });
-              await writeStorage(updated);
-            }
-          } else {
-            const errData = await res.json().catch(() => ({ status: res.status }));
-            console.error("Server rejected history sync:", errData);
-          }
+      if (apiBaseUrl && accessToken) {
+        // Token available — POST immediately
+        const { ok, serverId } = await postEntryToServer(entry, {
+          accessToken,
+          apiBaseUrl,
+        });
+        if (ok && serverId) {
+          const updated = get().entries.map((e) =>
+            e.id === entry.id ? { ...e, id: serverId } : e
+          );
+          set({ entries: updated });
+          await writeStorage(updated);
+        } else if (!ok) {
+          // POST failed despite having a token (network hiccup, server error).
+          // Queue it for retry on next hydration/token refresh.
+          await addToPendingQueue(entry);
         }
-      } catch (e) {
-        console.warn("Failed to sync history to server", e);
+      } else {
+        // No token yet — queue so we can retry once the user visits the website
+        // and AuthSyncComponent delivers the token to the extension.
+        console.log(
+          "[Promptly] No access token — queuing entry for later server sync."
+        );
+        await addToPendingQueue(entry);
       }
+    } catch (e) {
+      console.warn("[Promptly] history.add server sync error:", e);
+      // Queue as a fallback so data is not permanently lost
+      await addToPendingQueue(entry);
     }
 
     return entry;
@@ -164,32 +272,38 @@ export const useHistory = create<HistoryState>((set, get) => ({
   },
 
   toggleStar: async (id) => {
-    const entry = get().entries.find(e => e.id === id);
+    const entry = get().entries.find((e) => e.id === id);
     if (!entry) return;
     const newStarred = !entry.isStarred;
-    const next = get().entries.map((e) => e.id === id ? { ...e, isStarred: newStarred } : e);
+    const next = get().entries.map((e) =>
+      e.id === id ? { ...e, isStarred: newStarred } : e
+    );
     set({ entries: next });
     await writeStorage(next);
 
-    // Sync star status to server so starred entries survive the 1-day cleanup
     try {
       const settings = await getSettings();
-      const CORRECT_URL = "https://prompweb.vercel.app";
+      const CORRECT_URL = "https://proenpt.vercel.app";
       const wrongUrls = ["https://api.promptly-optimizer.app"];
-      const API_BASE = process.env.NODE_ENV === "production" ? "https://prompweb.vercel.app" : "http://localhost:3000";
+      const rawUrl = settings.apiBaseUrl;
+      const apiBaseUrl =
+        !rawUrl || wrongUrls.includes(rawUrl) ? CORRECT_URL : rawUrl;
       const accessToken = settings.accessToken;
 
-      if (accessToken) {
-        fetch(`${API_BASE}/api/history`, {
+      if (apiBaseUrl && accessToken) {
+        fetch(`${apiBaseUrl}/api/history`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
-          body: JSON.stringify({ id, isStarred: newStarred })
-        }).catch(e => console.warn("[Promptly] Star sync failed:", e));
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ id, isStarred: newStarred }),
+        }).catch((e) => console.warn("[Promptly] Star sync failed:", e));
       }
     } catch (e) {
       console.warn("[Promptly] toggleStar server sync error:", e);
     }
-  }
+  },
 }));
 
 /** Format a timestamp as a compact relative time: "now", "12s", "5m", "3h", "yesterday", "Mar 4". */

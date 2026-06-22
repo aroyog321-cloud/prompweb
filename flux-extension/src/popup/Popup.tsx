@@ -82,10 +82,10 @@ export const Popup: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full shadow-lg border border-[var(--border-subtle)]" style={{ background: 'var(--surface-elevated)' }}>
-              <img src="/promptly-orb.png" alt="Promptly Orb" className="w-full h-full object-cover scale-[1.1]" />
+              <img src="/promptly-orb.png" alt="Proenpt Orb" className="w-full h-full object-cover scale-[1.1]" />
             </div>
             <div>
-              <h1 className="font-display text-[15px] font-semibold text-[var(--text-primary)] leading-none mb-1">Promptly</h1>
+              <h1 className="font-display text-[15px] font-semibold text-[var(--text-primary)] leading-none mb-1">Proenpt</h1>
               <p className="text-[11px] text-[var(--text-secondary)] font-medium">Prompt Optimizer</p>
             </div>
           </div>
@@ -95,15 +95,19 @@ export const Popup: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[var(--border-subtle)] w-full">
+        <div className="relative flex w-full p-1 bg-[var(--surface-floating)] border border-[var(--border-subtle)] rounded-lg mt-2">
+          <div 
+            className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-[var(--surface-base)] border border-[var(--border-strong)] rounded-md shadow-sm transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ transform: activeTab === 'general' ? 'translateX(0)' : 'translateX(calc(100% + 0px))' }}
+          />
           {(['general', 'context'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 pb-2 text-[12px] font-medium transition-colors ${
+              className={`relative z-10 flex-1 py-1.5 text-[12px] font-medium transition-colors duration-300 ${
                 activeTab === tab 
-                  ? 'text-[var(--text-primary)] border-b-2 border-[var(--text-primary)]' 
-                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] border-b-2 border-transparent'
+                  ? 'text-[var(--text-primary)]' 
+                  : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
               }`}
             >
               {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -115,8 +119,8 @@ export const Popup: React.FC = () => {
       {/* Tab Content */}
       <div className="flex-1 overflow-y-auto p-5 pb-6 custom-scrollbar">
         {activeTab === 'general' && (
-          <div className="space-y-5 animate-in fade-in duration-300">
-            <section className="space-y-3">
+          <div className="space-y-5">
+            <section className="space-y-3 animate-in fade-in" style={{ opacity: 0, animationDelay: '0ms' }}>
               <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Defaults</h2>
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Mode">
@@ -146,9 +150,9 @@ export const Popup: React.FC = () => {
               </div>
             </section>
             
-            <div className="minimal-divider" />
+            <div className="minimal-divider animate-in fade-in" style={{ opacity: 0, animationDelay: '50ms' }} />
             
-            <section className="space-y-3">
+            <section className="space-y-3 animate-in fade-in" style={{ opacity: 0, animationDelay: '100ms' }}>
               <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Preferences</h2>
               <div className="flex items-center justify-between promptly-card p-3">
                 <div>
@@ -161,9 +165,9 @@ export const Popup: React.FC = () => {
               </div>
             </section>
             
-            <div className="minimal-divider" />
+            <div className="minimal-divider animate-in fade-in" style={{ opacity: 0, animationDelay: '150ms' }} />
             
-            <section className="space-y-3">
+            <section className="space-y-3 animate-in fade-in" style={{ opacity: 0, animationDelay: '200ms' }}>
               <div className="flex items-center justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Your Plan</h2>
                 <span className="text-[10px] font-semibold bg-[var(--surface-floating)] border border-[var(--border-subtle)] px-2 py-0.5 rounded text-[var(--text-secondary)]">
@@ -200,8 +204,8 @@ export const Popup: React.FC = () => {
         )}
 
         {activeTab === 'context' && (
-          <div className="space-y-5 animate-in fade-in duration-300">
-            <section className="space-y-4">
+          <div className="space-y-5">
+            <section className="space-y-4 animate-in fade-in" style={{ opacity: 0, animationDelay: '0ms' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Context Memory</h2>
@@ -269,10 +273,10 @@ const Toggle: React.FC<{ checked: boolean; onChange: (checked: boolean) => void;
     aria-checked={checked}
     aria-label={ariaLabel}
     onClick={() => onChange(!checked)}
-    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none ${checked ? "bg-[var(--text-primary)]" : "bg-[var(--surface-floating)] border-[var(--border-subtle)]"}`}
+    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent outline-none transition-colors duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${checked ? "bg-[var(--text-primary)]" : "bg-[var(--surface-floating)] border-[var(--border-subtle)]"}`}
   >
     <span
-      className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full shadow ring-0 transition duration-200 ease-in-out ${checked ? "translate-x-4 bg-[var(--surface-base)]" : "translate-x-0.5 bg-[var(--text-tertiary)]"}`}
+      className={`pointer-events-none inline-block h-3.5 w-3.5 transform rounded-full shadow ring-0 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${checked ? "translate-x-4 bg-[var(--surface-base)]" : "translate-x-0.5 bg-[var(--text-tertiary)]"}`}
     />
   </button>
 );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,14 +7,14 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta-sans",
+  variable: "--font-space-grotesk",
 });
 
 export const metadata: Metadata = {
-  title: "Promptly - Optimize your AI prompts",
-  description: "The intelligent prompt engineering overlay for Chrome.",
+  title: "Proenpt | Turn Good Prompts Into Expert Prompts",
+  description: "Stop getting generic AI responses. Proenpt sits inside ChatGPT, Claude, and Gemini to automatically rewrite your prompts using expert-level frameworks, saving you hours of frustration.",
 };
 
 import { GlobalAuthSync } from "../components/GlobalAuthSync";
@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-[#09090b] text-white selection:bg-blue-500/30">
+      <body className="min-h-full flex flex-col font-sans bg-background text-foreground selection:bg-promptly-cyan/30">
         {children}
         <GlobalAuthSync />
       </body>

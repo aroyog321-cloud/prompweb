@@ -35,13 +35,13 @@ class LRUCache<K, V> {
 const PROMPT_CACHE = new LRUCache<string, OptimizeResponse>(50);
 
 function getLevelConfig(level: string, isCritique: boolean = false) {
-  if (isCritique) return { temperature: 0.3, maxOutputTokens: 2048 };
+  if (isCritique) return { temperature: 0.25, maxOutputTokens: 4500 };
   switch (level) {
-    case "light": return { temperature: 0.2, maxOutputTokens: 512 };
-    case "medium": return { temperature: 0.4, maxOutputTokens: 1024 };
-    case "aggressive": return { temperature: 0.6, maxOutputTokens: 2048 };
-    case "expert": return { temperature: 0.7, maxOutputTokens: 2048 };
-    default: return { temperature: 0.7, maxOutputTokens: 2048 };
+    case "light":      return { temperature: 0.3,  maxOutputTokens: 900 };
+    case "medium":     return { temperature: 0.6,  maxOutputTokens: 1600 };
+    case "aggressive": return { temperature: 0.65, maxOutputTokens: 3200 };
+    case "expert":     return { temperature: 0.72, maxOutputTokens: 4500 };
+    default:           return { temperature: 0.65, maxOutputTokens: 3200 };
   }
 }
 
@@ -102,13 +102,21 @@ async function directAIFetch(endpoint: string, apiKey: string | undefined, messa
 
 function keywordClassify(text: string): PromptMode {
   const t = text.toLowerCase();
-  if (/\b(money|income|earn|profit|cash|wealth|affiliate|ecommerce|side[- ]hustle|passive[- ]income|monetiz|invest|trading|crypto)\b/.test(t)) return "business";
-  if (/\b(code|function|api|database|bug|typescript|python|react|sql|deploy|refactor|implement)\b/.test(t)) return "developer";
-  if (/\b(design|mockup|wireframe|ux|ui|figma|typography|color|logo)\b/.test(t)) return "designer";
-  if (/\b(marketing|campaign|ad copy|seo|funnel|landing page|lead magnet|growth)\b/.test(t)) return "marketing";
-  if (/\b(research|study|paper|evidence|citation|thesis|literature)\b/.test(t)) return "research";
-  if (/\b(blog|article|story|essay|video script|newsletter|caption|headline|tweet)\b/.test(t)) return "content-creator";
-  if (/\b(mvp|launch|founder|investor|pitch|startup|go-to-market)\b/.test(t)) return "startup-founder";
+  
+  if (/\b(code|function|api|database|bug|typescript|python|react|sql|deploy|refactor|implement|git|github|backend|frontend|devops|architecture|algorithm|debug|component|css|html|server|docker|aws|cloud|repo|javascript|rust|golang|c\+\+|java|syntax|error|compile|terminal|script|variable|endpoint)\b/.test(t)) return "developer";
+  
+  if (/\b(design|mockup|wireframe|ux|ui|figma|typography|color|logo|prototype|layout|palette|interface|aesthetic|branding|user flow|sketch|adobe|padding|margin|accessibility|a11y|responsive|gradient|visual|contrast)\b/.test(t)) return "designer";
+  
+  if (/\b(marketing|campaign|ad copy|seo|funnel|landing page|lead magnet|growth|conversion|ctr|cpa|audience|target market|email sequence|newsletter growth|retention|brand awareness|social media|twitter thread|viral|engagement|clickbait)\b/.test(t)) return "marketing";
+  
+  if (/\b(research|study|paper|evidence|citation|thesis|literature|methodology|hypothesis|experiment|data analysis|academic|peer-reviewed|journal|abstract|statistics|survey|qualitative|quantitative|analysis|synthesis|review)\b/.test(t)) return "research";
+  
+  if (/\b(money|income|earn|profit|cash|wealth|affiliate|ecommerce|side[- ]hustle|passive[- ]income|monetiz|invest|trading|crypto|revenue|business model|saas|pricing|margin|roi|sales|pipeline|strategy|acquisition)\b/.test(t)) return "business";
+  
+  if (/\b(blog|article|story|essay|video script|newsletter|caption|headline|tweet|script|youtube|podcast|short form|tiktok|reels|instagram|narrative|hook|storytelling|writer|drafting|copywriting)\b/.test(t)) return "content-creator";
+  
+  if (/\b(mvp|launch|founder|investor|pitch|startup|go-to-market|funding|seed round|series a|vc|venture capital|term sheet|co-founder|product-market fit|pmf|pivot|burn rate|runway|valuation|lean startup|incubator)\b/.test(t)) return "startup-founder";
+  
   return "general";
 }
 
@@ -140,6 +148,10 @@ export async function optimizePrompt(
 ): Promise<OptimizeResponse> {
   let lastError: Error | undefined;
 
+  if (req.mode === "auto") {
+    req.mode = await resolveMode(req, config);
+  }
+
   const cacheKey = JSON.stringify({ 
     text: req.text, 
     mode: req.mode, 
@@ -159,11 +171,9 @@ export async function optimizePrompt(
         : `${config.apiBaseUrl.replace(/\/$/, "")}/api/optimize`;
 
       if (isDirectAI) {
-        let finalMode = await resolveMode(req, config);
-
         const platform = req.platform || window.location.hostname || "unknown";
-        const systemPrompt = buildSystemPrompt(finalMode, req.level, platform);
-        const userPrompt = buildUserPrompt({ ...req, mode: finalMode });
+        const systemPrompt = buildSystemPrompt(req.mode, req.level, platform);
+        const userPrompt = buildUserPrompt(req);
         const isTwoPass = req.level === "aggressive" || req.level === "expert";
 
         if (isTwoPass) {
@@ -182,16 +192,24 @@ export async function optimizePrompt(
           );
 
           // Pass 2: Critique
-          const critiquePrompt = `Apply this rubric point-by-point to the draft below. If any check fails, output a REVISED version that fixes the issues. If it already passes all checks, output it unchanged. Do not explain.
+          const critiquePrompt = `Apply this failure-mode rubric to the draft below. If any check fails, output a REVISED version that fixes the issues. If it already passes all checks, output it unchanged. Do not explain.
 
 RUBRIC:
-- ROLE: Specific expert persona with concrete skills (not "an expert" / "an assistant")
-- CONTEXT: Names who, what, why — concrete, not generic
-- OBJECTIVE: Single sharp deliverable with measurable criteria
-- CONSTRAINTS: ≥2 negative constraints (Do NOT / Avoid)
-- OUTPUT FORMAT: Exact structure (sections, length, format)
-- SUCCESS CRITERIA: What "done well" looks like
-${req.level === "expert" ? "- EDGE CASES: Failure modes the model should watch for" : ""}
+- ROLE: Must be a specific person with opinions, not a generic title. 
+  Bad: "an experienced data scientist." 
+  Fix: Name the specific experience, constraints, and philosophy they hold.
+- CONTEXT: Must contain concrete facts or labeled assumptions, not category descriptions.
+  Bad: "a B2B software company." 
+  Fix: Inject concrete details (e.g., "12-person Series A SaaS").
+- OBJECTIVE: Must have measurable success criteria.
+  Bad: "write a good report." 
+  Fix: Specify word count, structure, and what the report should achieve.
+- CONSTRAINTS: Must have ≥2 explicit negative (Do NOT) constraints naming specific clichés or failure modes to avoid.
+  Bad: "Be concise." 
+  Fix: "Do NOT use passive voice or exceed 300 words."
+- OUTPUT FORMAT: Must specify exact structure, sections, and length.
+- SUCCESS CRITERIA: Must define what a high-quality output looks like to a skeptic.
+${req.level === "expert" ? "- EDGE CASES: Must explicitly name 2-3 likely failure modes for the model to watch out for." : ""}
 
 DRAFT:
 ${draftText}`;
@@ -232,10 +250,8 @@ ${draftText}`;
           return response;
         }
       } else {
-        let finalMode = await resolveMode(req, config);
-
         // Next.js Route
-        let payload: any = { ...req, mode: finalMode, platform: req.platform || window.location.hostname || "unknown" };
+        let payload: any = { ...req, platform: req.platform || window.location.hostname || "unknown" };
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { 

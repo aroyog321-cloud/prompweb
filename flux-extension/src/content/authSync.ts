@@ -11,7 +11,15 @@ function saveToken(token: string, apiBaseUrl: string) {
         return;
       }
       window.postMessage({ type: "PROMPTLY_AUTH_SYNCED" }, window.location.origin);
-      console.log("[Promptly] Token saved. Optimizations will now sync to the server.");     
+      console.log("[Promptly] Token saved. Optimizations will now sync to the server.");
+
+      // Now that we have a valid token, drain any history entries that were
+      // saved locally while the token was missing (e.g. the user optimized
+      // prompts before ever opening the website). Import lazily to avoid
+      // circular dependencies at module load time.
+      import("../lib/history").then(({ useHistory }) => {
+        useHistory.getState().drainPendingQueue({ accessToken: token, apiBaseUrl });
+      }).catch(() => { /* non-critical */ });
     });
   });
 }
@@ -31,8 +39,14 @@ const announceInterval = setInterval(() => {
 
 window.addEventListener("message", (event) => {
   // Accept same-origin and our known dev/prod origins
-  const allowed = ["http://localhost:3000", "http://127.0.0.1:3000"];
-  const ok = allowed.includes(event.origin) || event.origin.endsWith(".vercel.app") || event.origin.endsWith("promptly.com");
+  const allowed = [
+    "http://localhost:3000", 
+    "http://127.0.0.1:3000",
+    "https://proenpt.com",
+    "https://app.proenpt.com",
+    "https://proenpt.vercel.app"
+  ];
+  const ok = allowed.includes(event.origin);
   if (!ok) return;
   // This helps when Next.js wraps the dev experience in an iframe, allowing the ping to flow through
   // Removing event.source !== window restriction for robust cross-frame communication within the same origin
