@@ -8,12 +8,9 @@ export function MarketingNav() {
       style={{ background: "rgba(9,9,11,0.8)", backdropFilter: "blur(20px)" }}
     >
       <Link href="/" className="flex items-center gap-2">
-        <div
-          className="size-7 rounded-full flex items-center justify-center border border-white/10"
-          style={{ background: "linear-gradient(135deg, #3b82f6, #8b5cf6)" }}
-        />
+        <img src="/promptly-orb.png" alt="Proenpt Orb" className="size-7 rounded-full object-cover" />
         <span className="font-display font-semibold text-white text-[16px] tracking-tight">
-          Promptly
+          Proenpt
         </span>
       </Link>
 
