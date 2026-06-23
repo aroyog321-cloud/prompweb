@@ -8,16 +8,10 @@ export function middleware(request: NextRequest) {
   }
 
   const origin = request.headers.get('origin') || '';
-  const isExtension = origin.startsWith('chrome-extension://');
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://proenpt.com',
-    'https://app.proenpt.com',
-    'https://proenpt.vercel.app'
-  ];
-
-  const allowedOrigin = isExtension || allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  
+  // The API is consumed by a Chrome extension content script which can be injected 
+  // into any webpage (chatgpt.com, claude.ai, etc.). Thus, we must allow any origin.
+  const allowedOrigin = origin || '*';
 
   // FIX 1.3: Only allow private network access for localhost dev origins.
   // Sending Access-Control-Allow-Private-Network: true for public domains lets
