@@ -80,7 +80,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["public/icons/*", "public/promptly-orb.png"],
+      "resources": ["public/icons/*", "public/promptly-orb.png", "assets/*.js"],
       "matches": ["<all_urls>"]
     }
   ]

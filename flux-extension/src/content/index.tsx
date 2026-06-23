@@ -125,6 +125,16 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
     });
   }, []);
 
+  // Drain pending history whenever we get a valid access token
+  React.useEffect(() => {
+    if (settings?.accessToken && settings?.apiBaseUrl) {
+      useHistory.getState().drainPendingQueue({ 
+        accessToken: settings.accessToken, 
+        apiBaseUrl: settings.apiBaseUrl 
+      });
+    }
+  }, [settings?.accessToken, settings?.apiBaseUrl]);
+
   React.useEffect(() => {
     const update = () => {
       const input = findInputElement(platform);

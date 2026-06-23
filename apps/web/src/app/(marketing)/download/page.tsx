@@ -12,7 +12,7 @@ export default function DownloadPage() {
         <div className="w-full max-w-3xl relative z-10">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Install Promptly
+              Install Proenpt
             </h1>
             <p className="text-lg text-zinc-400">
               Get the Chrome extension and start optimizing your workflow.

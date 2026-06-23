@@ -21,8 +21,8 @@ const trafficData = [
 ];
 
 const features = [
-  { icon: Zap,       label: "Instant Optimization", desc: "Type your raw thoughts. Promptly restructures them into a highly effective prompt framework in milliseconds.", color: "#3b82f6" },
-  { icon: Brain,     label: "Context Memory",       desc: "Define your tone, audience, and constraints once. Promptly invisibly injects your unique context.", color: "#8b5cf6" },
+  { icon: Zap,       label: "Instant Optimization", desc: "Type your raw thoughts. Proenpt restructures them into a highly effective prompt framework in milliseconds.", color: "#3b82f6" },
+  { icon: Brain,     label: "Context Memory",       desc: "Define your tone, audience, and constraints once. Proenpt invisibly injects your unique context.", color: "#8b5cf6" },
   { icon: BarChart2, label: "Quality Breakdown",    desc: "Get real-time scoring on clarity, context, and constraints before you hit send.", color: "#06b6d4" },
   { icon: History,   label: "Undo Stack & History", desc: "Never lose a great prompt. Access a full version history of your prompt iterations and variations.", color: "#10b981" },
   { icon: Lightbulb, label: "Platform-Aware Tips",  desc: "Dynamic suggestions tailored to the specific AI model you are currently chatting with.", color: "#f59e0b" },
@@ -60,8 +60,8 @@ const pricingTiers = [
 ];
 
 const faqs = [
-  { q: "Does Promptly read my chat history?", a: "No. Promptly only reads the text inside the input box when you explicitly trigger an optimization. It does not monitor or store your conversation history with AI models." },
-  { q: "Which platforms are supported?", a: "Promptly works seamlessly on ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, and practically any website with a text area via the global keyboard shortcut." },
+  { q: "Does Proenpt read my chat history?", a: "No. Proenpt only reads the text inside the input box when you explicitly trigger an optimization. It does not monitor or store your conversation history with AI models." },
+  { q: "Which platforms are supported?", a: "Proenpt works seamlessly on ChatGPT, Claude, Gemini, Perplexity, Grok, DeepSeek, and practically any website with a text area via the global keyboard shortcut." },
   { q: "Is my Context Memory data private?", a: "Yes. Context Memory profiles are synced securely and are only injected into your prompts at runtime. We do not use your context data to train our own models." },
   { q: "Can I use it for free?", a: "Absolutely. The Free tier provides up to 10 optimizations per day, which is plenty for casual use. You only need to upgrade if you are a power user." }
 ];
@@ -133,7 +133,7 @@ export default function LandingPage() {
             style={{ background: "rgba(255,255,255,0.04)" }}
           >
             <span className="size-1.5 rounded-full bg-blue-400 animate-pulse" />
-            Introducing Promptly for Chrome
+            Introducing Proenpt for Chrome
             <ChevronRight size={12} />
           </div>
         </ScrollReveal>
@@ -151,7 +151,7 @@ export default function LandingPage() {
 
         <ScrollReveal delay={200}>
           <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Promptly works alongside ChatGPT, Claude, and Gemini to automatically rewrite, optimize, and organize your prompts for professional-grade AI outputs.
+            Proenpt works alongside ChatGPT, Claude, and Gemini to automatically rewrite, optimize, and organize your prompts for professional-grade AI outputs.
           </p>
         </ScrollReveal>
 
@@ -198,14 +198,14 @@ export default function LandingPage() {
               </div>
             </div>
             
-            {/* Fake Promptly Orb */}
+            {/* Fake Proenpt Orb */}
             <div className="absolute top-1/2 -left-6 transform -translate-y-1/2 flex items-center gap-4 z-20">
               <div 
                 className="w-12 h-12 rounded-full border border-white/20 shadow-[0_0_30px_rgba(168,85,247,0.6)] cursor-pointer hover:scale-105 transition-transform flex items-center justify-center overflow-hidden z-20"
                 style={{ background: 'rgba(20,20,20,0.8)', backdropFilter: 'blur(10px)' }}
                 onClick={() => setIsPanelOpen(!isPanelOpen)}
               >
-                <img src="/promptly-orb.png" alt="Promptly Orb" className="w-full h-full object-cover scale-[1.1]" />
+                <img src="/promptly-orb.png" alt="Proenpt Orb" className="w-full h-full object-cover scale-[1.1]" />
               </div>
 
               {/* Fake Optimizer Panel */}
@@ -215,8 +215,8 @@ export default function LandingPage() {
               >
                 <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.08] bg-[#111111]">
                   <div className="flex items-center gap-2">
-                    <img src="/promptly-orb.png" alt="Promptly" className="w-5 h-5 rounded-full" />
-                    <span className="text-[12px] font-semibold text-zinc-200">Promptly</span>
+                    <img src="/promptly-orb.png" alt="Proenpt" className="w-5 h-5 rounded-full" />
+                    <span className="text-[12px] font-semibold text-zinc-200">Proenpt</span>
                   </div>
                   <div className="flex gap-2">
                     <div className="px-2 py-1 rounded bg-[#222] border border-[#333] text-[10px] text-zinc-300 flex items-center gap-1">
@@ -289,7 +289,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-2xl overflow-hidden">
             <div className="bg-[#111] p-8">
               <div className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <span className="size-2 rounded-full bg-red-400"></span> Before Promptly
+                <span className="size-2 rounded-full bg-red-400"></span> Before Proenpt
               </div>
               <p className="text-zinc-400 font-mono text-sm leading-relaxed whitespace-pre-wrap">
                 write a blog post about our new AI features. make it sound exciting and not too long. it should appeal to developers.
@@ -301,7 +301,7 @@ export default function LandingPage() {
             
             <div className="bg-[#161616] p-8">
               <div className="text-xs font-semibold text-green-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <span className="size-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></span> After Promptly
+                <span className="size-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"></span> After Proenpt
               </div>
               <p className="text-zinc-200 font-mono text-sm leading-relaxed whitespace-pre-wrap">
                 <span className="text-purple-400"># ROLE</span><br/>
@@ -512,7 +512,7 @@ export default function LandingPage() {
             <h2 className="font-display text-4xl md:text-5xl font-extrabold text-white mb-4">
               Ready to deploy?
             </h2>
-            <p className="text-zinc-400 mb-8">Join thousands of developers shipping faster with Promptly.</p>
+            <p className="text-zinc-400 mb-8">Join thousands of developers shipping faster with Proenpt.</p>
             <Link
               href="/login"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-xl text-white font-semibold text-base transition-all hover:scale-[1.02]"
@@ -532,7 +532,7 @@ export default function LandingPage() {
       <footer className="relative z-10 py-12 px-6 border-t border-white/[0.08] bg-[#09090b]">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div>
-            <h3 className="font-display text-lg font-bold text-white mb-4">Promptly</h3>
+            <h3 className="font-display text-lg font-bold text-white mb-4">Proenpt</h3>
             <p className="text-zinc-500 text-sm">Supercharge your AI prompts instantly.</p>
           </div>
           <div>
@@ -560,7 +560,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="max-w-6xl mx-auto pt-8 border-t border-white/[0.08] flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-zinc-600">
-          <p>© {new Date().getFullYear()} Promptly. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Proenpt. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="#" className="hover:text-zinc-400 transition-colors">Twitter</Link>
             <Link href="#" className="hover:text-zinc-400 transition-colors">GitHub</Link>

@@ -13,13 +13,8 @@ function saveToken(token: string, apiBaseUrl: string) {
       window.postMessage({ type: "PROMPTLY_AUTH_SYNCED" }, window.location.origin);
       console.log("[Promptly] Token saved. Optimizations will now sync to the server.");
 
-      // Now that we have a valid token, drain any history entries that were
-      // saved locally while the token was missing (e.g. the user optimized
-      // prompts before ever opening the website). Import lazily to avoid
-      // circular dependencies at module load time.
-      import("../lib/history").then(({ useHistory }) => {
-        useHistory.getState().drainPendingQueue({ accessToken: token, apiBaseUrl });
-      }).catch(() => { /* non-critical */ });
+      // Tell background script to trigger a drain on active extension tabs
+      chrome.runtime.sendMessage({ type: "PROMPTLY_TOKEN_SAVED_DRAIN_HISTORY" }).catch(() => {});
     });
   });
 }
