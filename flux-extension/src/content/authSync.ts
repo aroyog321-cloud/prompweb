@@ -2,6 +2,7 @@
 const STORAGE_KEY = "promptly_settings_v1";
 
 function saveToken(token: string, apiBaseUrl: string) {
+  if (!chrome.runtime?.id) return; // Context invalidated
   chrome.storage.local.get(STORAGE_KEY, (res) => {
     const current = res[STORAGE_KEY] || {};
     const next = { ...current, accessToken: token, apiBaseUrl };
@@ -59,6 +60,7 @@ window.addEventListener("message", (event) => {
     }
     saveToken(data.token, window.location.origin);
   } else if (data.type === "PROMPTLY_LOGOUT") {
+    if (!chrome.runtime?.id) return;
     chrome.storage.local.get(STORAGE_KEY, (res) => {
       const current = res[STORAGE_KEY] || {};
       chrome.storage.local.set({ [STORAGE_KEY]: { ...current, accessToken: "" } }, () => {   
@@ -67,6 +69,7 @@ window.addEventListener("message", (event) => {
       });
     });
   } else if (data.type === "PROMPTLY_PLAN_UPDATED" || data.type === "PROMPTLY_CONTEXT_UPDATED" || data.type === "PROMPTLY_HISTORY_UPDATED") {
+    if (!chrome.runtime?.id) return;
     chrome.runtime.sendMessage(data).catch(() => {});
     if (data.type === "PROMPTLY_PLAN_UPDATED") {
       chrome.storage.local.remove("apiPlanCache");
