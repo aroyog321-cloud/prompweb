@@ -99,3 +99,14 @@ export const LEVEL_CONFIGS: Record<RewriteLevel, LevelConfig> = {
     ],
   },
 };
+
+export function getLevelConfig(level: string, isCritique: boolean = false) {
+  if (isCritique) return { temperature: 0.3, maxOutputTokens: 4500 };
+  switch (level) {
+    case "light":      return { temperature: 0.2, maxOutputTokens: 900 };
+    case "medium":     return { temperature: 0.4, maxOutputTokens: 1600 };
+    case "aggressive": return { temperature: 0.6, maxOutputTokens: 3200 };
+    case "expert":     return { temperature: 0.7, maxOutputTokens: 4500 };
+    default:           return { temperature: 0.6, maxOutputTokens: 3200 };
+  }
+}

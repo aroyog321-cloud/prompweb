@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { OptimizeRequest, OptimizeResponse } from '@promptly/types';
-import { buildSystemPrompt, buildUserPrompt, localOptimize } from '@promptly/prompt-engine';
+import { buildSystemPrompt, buildUserPrompt, localOptimize, getLevelConfig } from '@promptly/prompt-engine';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -12,16 +12,6 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_KEY_PREMIUM = process.env.GEMINI_API_KEY_PREMIUM || process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
-function getLevelConfig(level: string, isCritique: boolean = false) {
-  if (isCritique) return { temperature: 0.3, maxOutputTokens: 2048 };
-  switch (level) {
-    case "light": return { temperature: 0.2, maxOutputTokens: 512 };
-    case "medium": return { temperature: 0.4, maxOutputTokens: 1024 };
-    case "aggressive": return { temperature: 0.6, maxOutputTokens: 2048 };
-    case "expert": return { temperature: 0.7, maxOutputTokens: 2048 };
-    default: return { temperature: 0.7, maxOutputTokens: 2048 };
-  }
-}
 
 async function makeGeminiCall(systemPrompt: string, userPrompt: string, stream: boolean, config: { temperature: number, maxOutputTokens: number }, apiKey: string = GEMINI_API_KEY!) {
   const endpoint = stream 
@@ -59,11 +49,14 @@ function createOpenAIStream(response: Response, logData?: { user: any, body: any
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   let accumulatedText = "";
+  let buffer = "";
   
   const transformStream = new TransformStream({
     async transform(chunk, controller) {
       const text = decoder.decode(chunk, { stream: true });
-      const lines = text.split('\n');
+      buffer += text;
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? "";
       
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -197,82 +190,33 @@ export async function POST(request: Request) {
 
     if (user && !supabaseUrl.includes('placeholder')) {
       // --- Manual Usage Tracking (Bypasses missing increment_usage RPC) ---
-      const { data: currentStats } = await supabaseUserClient
-        .from('usage_stats')
-        .select('*')
-        .eq('id', user.id)
-        .single();
+      const { data: usageData, error: usageError } = await supabaseUserClient.rpc('increment_usage', {
+        p_user_id: user.id,
+        p_is_regen: isRegeneration
+      });
 
-      const today = new Date().toISOString().split('T')[0];
-      const lastReset = currentStats?.last_reset_date ? new Date(currentStats.last_reset_date).toISOString().split('T')[0] : null;
-
-      let stats = currentStats;
-
-      // Handle daily reset or first-time initialization
-      if (!currentStats || lastReset !== today) {
-        const newRow = {
-          id: user.id,
-          tier: currentStats?.tier || 'free',
-          total_requests_today: 0,
-          regenerations_today: 0,
-          aggressive_expert_today: 0,
-          last_reset_date: new Date().toISOString()
-        };
-        const { data: upserted, error: upsertError } = await supabaseUserClient
-          .from('usage_stats')
-          .upsert(newRow, { onConflict: 'id' })
-          .select()
-          .single();
-          
-        if (upsertError) {
-          console.error("Initialization error:", upsertError);
-          return NextResponse.json({ error: "Usage initialization error." }, { status: 500 });
-        }
-        stats = upserted || newRow;
+      if (usageError) {
+        console.error("Usage tracking error:", usageError);
+        return NextResponse.json({ error: "Usage tracking error. Please try again." }, { status: 500 });
       }
 
-      tier = stats.tier || 'free';
+      if (!usageData || usageData.length === 0) {
+        return NextResponse.json({ error: "Usage tracking error. No data returned." }, { status: 500 });
+      }
+
+      tier = usageData[0].tier || 'free';
+
+      if (!usageData[0].allowed) {
+        const msg = tier === 'free' 
+          ? (isRegeneration ? "Regeneration limit reached for today (4/4). Upgrade to Pro." : "Daily limit reached (10/10). Upgrade to Pro for 50/day.")
+          : (isRegeneration ? "Regeneration limit reached for today (50/50). Upgrade to Expert." : "Daily limit reached (50/50). Upgrade to Expert for unlimited.");
+        return NextResponse.json({ error: msg }, { status: 403 });
+      }
 
       // 1. Lock Context Memory for free AND pro
       if (hasContextMemory && (tier === 'free' || tier === 'pro')) {
         return NextResponse.json({ error: "Context Memory is locked. Upgrade to Expert." }, { status: 403 });
       }
-
-      // 2. Enforce Quotas based on true tier limits
-      const maxOpt = tier === 'free' ? 10 : tier === 'pro' ? 50 : Infinity;
-      const maxRegen = tier === 'free' ? 4 : tier === 'pro' ? 50 : Infinity;
-
-      if (!isRegeneration && stats.total_requests_today >= maxOpt) {
-        const msg = tier === 'free' 
-          ? "Daily limit reached (10/10). Upgrade to Pro for 50/day." 
-          : "Daily limit reached (50/50). Upgrade to Expert for unlimited.";
-        return NextResponse.json({ error: msg }, { status: 403 });
-      }
-
-      if (isRegeneration && stats.regenerations_today >= maxRegen) {
-        const msg = tier === 'free'
-          ? "Regeneration limit reached for today (4/4). Upgrade to Pro."
-          : "Regeneration limit reached for today (50/50). Upgrade to Expert.";
-        return NextResponse.json({ error: msg }, { status: 403 });
-      }
-
-      // 3. Perform manual atomic increment
-      const newTotal = stats.total_requests_today + (isRegeneration ? 0 : 1);
-      const newRegen = stats.regenerations_today + (isRegeneration ? 1 : 0);
-      
-      const { error: updateError } = await supabaseUserClient
-        .from('usage_stats')
-        .update({
-          total_requests_today: newTotal,
-          regenerations_today: newRegen
-        })
-        .eq('id', user.id);
-
-      if (updateError) {
-        console.error("Manual usage tracking update error:", updateError);
-        return NextResponse.json({ error: "Usage tracking error. Please try again." }, { status: 500 });
-      }
-    }
 
     // --- Dynamic API Key Lookup ---
     let dynamicApiKey = null;
@@ -324,7 +268,28 @@ export async function POST(request: Request) {
     const isTrustedOrigin = rawOrigin.startsWith("chrome-extension://") || ALLOWED_ORIGINS.includes(rawOrigin);
     const platform = isTrustedOrigin ? rawOrigin : undefined;
 
-    const systemPrompt = buildSystemPrompt(body.mode, body.level, platform);
+    let resolvedMode = body.mode;
+    if (body.mode === "auto") {
+      const classifierPrompt = `Classify into ONE: general, developer, designer, marketing, research, business, content-creator, startup-founder. Output ONLY the category name.\n\n"${body.text.slice(0, 300)}"`;
+      try {
+        const classifyRes = await makeGeminiCall(
+          "You classify user requests. Output only the category name, nothing else.",
+          classifierPrompt,
+          false,
+          { temperature: 0.1, maxOutputTokens: 20 },
+          FINAL_API_KEY
+        );
+        const classifyData = await classifyRes.json();
+        const raw = classifyData.candidates?.[0]?.content?.parts?.[0]?.text?.trim().toLowerCase();
+        const VALID = ["general","developer","designer","marketing","research","business","content-creator","startup-founder"];
+        resolvedMode = VALID.includes(raw) ? raw as any : "general";
+      } catch (e) {
+        console.warn("Classification failed, falling back to general", e);
+        resolvedMode = "general";
+      }
+    }
+
+    const systemPrompt = buildSystemPrompt(resolvedMode, body.level, platform);
     const userPrompt = buildUserPrompt(body);
 
     const activeApiKey = isTwoPass ? (GEMINI_API_KEY_PREMIUM || FINAL_API_KEY) : FINAL_API_KEY;
@@ -362,7 +327,8 @@ ${body.level === "expert" ? "- EDGE CASES: Must explicitly name 2-3 likely failu
 DRAFT:
 ${draftText}`;
       
-      const finalRes = await makeGeminiCall(systemPrompt, critiquePrompt, !!body.stream, getLevelConfig(body.level, true), activeApiKey);
+      const critiqueSystemPrompt = "You are a precise editor. Apply the rubric exactly as stated. Output only the revised prompt.";
+      const finalRes = await makeGeminiCall(critiqueSystemPrompt, critiquePrompt, !!body.stream, getLevelConfig(body.level, true), activeApiKey);
       
       if (body.stream) {
         return createOpenAIStream(finalRes, { user, body, platform: platform || "api", supabase: supabaseUserClient, supabaseUrl });

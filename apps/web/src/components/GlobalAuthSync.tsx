@@ -7,6 +7,7 @@ import { AuthSyncComponent } from './AuthSyncComponent'
 export function GlobalAuthSync() {
   const [token, setToken] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [syncStatus, setSyncStatus] = useState<'pending' | 'synced' | 'missing' | 'failed'>('pending')
 
   useEffect(() => {
     setMounted(true)
@@ -32,10 +33,11 @@ export function GlobalAuthSync() {
   if (!mounted || !token) return null
 
   // Wrap in a fixed div so it stays out of the way but still mounts on the DOM
+  const opacityClass = syncStatus === 'synced' ? 'opacity-20 hover:opacity-100' : 'opacity-100'
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-80 shadow-lg shadow-black/20 rounded-lg overflow-hidden transition-opacity hover:opacity-100 opacity-20 pointer-events-auto">
+    <div className={`fixed bottom-4 right-4 z-50 w-80 shadow-lg shadow-black/20 rounded-lg overflow-hidden transition-opacity ${opacityClass} pointer-events-auto`}>
       <div className="bg-[#09090b] border border-white/10 rounded-lg p-0.5">
-        <AuthSyncComponent accessToken={token} />
+        <AuthSyncComponent accessToken={token} onStatusChange={setSyncStatus} />
       </div>
     </div>
   )

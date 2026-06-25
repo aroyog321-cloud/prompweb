@@ -1,5 +1,5 @@
 import { OptimizeRequest, OptimizeResponse, PromptMode } from '@promptly/types';
-import { localOptimize, buildSystemPrompt, buildUserPrompt } from '@promptly/prompt-engine';
+import { localOptimize, buildSystemPrompt, buildUserPrompt, getLevelConfig } from '@promptly/prompt-engine';
 
 class LRUCache<K, V> {
   private max: number;
@@ -34,16 +34,6 @@ class LRUCache<K, V> {
 
 const PROMPT_CACHE = new LRUCache<string, OptimizeResponse>(50);
 
-function getLevelConfig(level: string, isCritique: boolean = false) {
-  if (isCritique) return { temperature: 0.25, maxOutputTokens: 4500 };
-  switch (level) {
-    case "light":      return { temperature: 0.3,  maxOutputTokens: 900 };
-    case "medium":     return { temperature: 0.6,  maxOutputTokens: 1600 };
-    case "aggressive": return { temperature: 0.65, maxOutputTokens: 3200 };
-    case "expert":     return { temperature: 0.72, maxOutputTokens: 4500 };
-    default:           return { temperature: 0.65, maxOutputTokens: 3200 };
-  }
-}
 
 async function directAIFetch(endpoint: string, apiKey: string | undefined, messages: any[], config: any, stream: boolean, onChunk?: (chunk: string) => void, signal?: AbortSignal) {
   const payload = {
@@ -70,13 +60,16 @@ async function directAIFetch(endpoint: string, apiKey: string | undefined, messa
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let fullText = "";
+    let buffer = "";
     
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       
       const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
+      buffer += chunk;
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? "";
       
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -216,11 +209,12 @@ ${req.level === "expert" ? "- EDGE CASES: Must explicitly name 2-3 likely failur
 DRAFT:
 ${draftText}`;
 
+          const critiqueSystemPrompt = "You are a precise editor. Apply the rubric exactly as stated. Output only the revised prompt.";
           const finalResult = await directAIFetch(
             endpoint,
             config.apiKey,
             [
-              { role: "system", content: systemPrompt },
+              { role: "system", content: critiqueSystemPrompt },
               { role: "user", content: critiquePrompt }
             ],
             getLevelConfig(req.level, true),

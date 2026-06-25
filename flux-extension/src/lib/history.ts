@@ -169,6 +169,7 @@ export const useHistory = create<HistoryState>((set, get) => ({
               level: (se.rewriteLevel || "medium").toLowerCase(),
               ts: new Date(se.createdAt).getTime(),
               source: "api",
+              isStarred: se.isStarred ?? false,
             });
           });
           localEntries.forEach((le) => {
@@ -275,6 +276,17 @@ export const useHistory = create<HistoryState>((set, get) => ({
     const next = get().entries.filter((e) => e.id !== id);
     set({ entries: next });
     await writeStorage(next);
+
+    // Sync deletion to server
+    try {
+      const settings = await getSettings();
+      if (settings.apiBaseUrl && settings.accessToken) {
+        fetch(`${settings.apiBaseUrl.replace(/\/$/, "")}/api/history?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${settings.accessToken}` },
+        }).catch(e => console.warn("[Promptly] Server delete failed:", e));
+      }
+    } catch(e) {}
   },
 
   clear: async () => {

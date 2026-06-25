@@ -3,18 +3,20 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export function AuthSyncComponent({ accessToken }: { accessToken: string }) {
+export function AuthSyncComponent({ accessToken, onStatusChange }: { accessToken: string, onStatusChange?: (status: 'pending' | 'synced' | 'missing' | 'failed') => void }) {
   const [status, setStatus] = useState<'pending' | 'synced' | 'missing' | 'failed'>('pending')
   const [retryCount, setRetryCount] = useState(0)
 
   const triggerSync = useCallback(() => {
     setStatus('pending')
+    onStatusChange?.('pending')
     setRetryCount(prev => prev + 1)
-  }, [])
+  }, [onStatusChange])
 
   useEffect(() => {
     if (!accessToken) {
       setStatus('missing')
+      onStatusChange?.('missing')
       return
     }
 
@@ -28,6 +30,7 @@ export function AuthSyncComponent({ accessToken }: { accessToken: string }) {
       } else if (event.data?.type === "PROMPTLY_AUTH_SYNCED") {
         isSynced = true;
         setStatus('synced')
+        onStatusChange?.('synced')
       }
     }
 
@@ -49,6 +52,7 @@ export function AuthSyncComponent({ accessToken }: { accessToken: string }) {
       if (attempts >= maxAttempts) {
         clearInterval(interval)
         setStatus('failed')
+        onStatusChange?.('failed')
       } else {
         window.postMessage({ type: "PROMPTLY_AUTH_PING" }, window.location.origin)
       }

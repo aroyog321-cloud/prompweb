@@ -314,23 +314,6 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
       writeInputText(input, result.optimized);
 
-      // Direct server sync — don't depend on history store auth state
-      const token = settings.accessToken;
-      const API_BASE = process.env.NODE_ENV === "production" ? "https://proenpt.vercel.app" : "http://localhost:3000";
-      
-      if (token) {
-        fetch(`${API_BASE}/api/history`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            originalPrompt: textToOptimize,
-            optimizedPrompt: result.optimized,
-            platformUsed: window.location.hostname,
-            promptMode: settings.defaultMode || "auto",
-            rewriteLevel: level
-          })
-        }).catch(e => console.warn("[Promptly] Server sync failed:", e));
-      }
 
       history.add({
         text: textToOptimize,

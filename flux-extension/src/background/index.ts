@@ -20,7 +20,7 @@ chrome.runtime.onInstalled.addListener((details) => {
         chrome.storage.local.set({
           [STORAGE_KEY]: {
             theme: "dark",
-            defaultMode: "auto",
+            defaultMode: "general",
             defaultLevel: "medium",
             shortcutEnabled: true,
             apiBaseUrl: CORRECT_URL,
@@ -31,6 +31,7 @@ chrome.runtime.onInstalled.addListener((details) => {
         });
       }
     });
+    chrome.tabs.create({ url: "https://proenpt.vercel.app/login" });
   }
 
   // Migration: fix wrong apiBaseUrl for existing installs (update or install)

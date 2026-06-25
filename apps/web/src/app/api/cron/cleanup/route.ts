@@ -16,9 +16,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const oneDayAgo = new Date();
-    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-    const oneDayAgoISO = oneDayAgo.toISOString();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoISO = thirtyDaysAgo.toISOString();
 
     // FIX 3.26: Batch DELETEs in chunks of 1000 to avoid long table locks.
     let totalDeleted = 0;
@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         .from('PromptHistory')
         .select('id')
         .eq('isStarred', false)
-        .lt('createdAt', oneDayAgoISO)
+        .lt('createdAt', thirtyDaysAgoISO)
         .limit(1000);
 
       if (selectError) {
