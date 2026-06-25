@@ -115,16 +115,19 @@ ${platformHint}
 Study these examples — pay attention not just to what sections exist, but to how precise and specific each line is. Generic version vs. what you should produce:
 
 `;
+    // We statically map examples to avoid bundler issues (Vite/Webpack dynamic import warnings)
     let loadedExamples: string[] = [];
-    try {
-      const mod = await import(`./examples/${mode}`);
-      loadedExamples = mod.examples || [];
-    } catch (e) {
-      // Fallback if no specific examples for this mode yet
-      try {
-        const mod = await import("./examples/general");
-        loadedExamples = mod.examples || [];
-      } catch (e2) {}
+    switch (mode) {
+      case "business": loadedExamples = (await import("./examples/business")).examples; break;
+      case "content-creator": loadedExamples = (await import("./examples/content-creator")).examples; break;
+      case "designer": loadedExamples = (await import("./examples/designer")).examples; break;
+      case "developer": loadedExamples = (await import("./examples/developer")).examples; break;
+      case "marketing": loadedExamples = (await import("./examples/marketing")).examples; break;
+      case "research": loadedExamples = (await import("./examples/research")).examples; break;
+      case "startup-founder": loadedExamples = (await import("./examples/startup-founder")).examples; break;
+      case "general":
+      default:
+        loadedExamples = (await import("./examples/general")).examples; break;
     }
 
     if (loadedExamples.length > 0) {
