@@ -44,17 +44,56 @@ async function directAIFetch(endpoint: string, apiKey: string | undefined, messa
     stream
   };
 
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { 
-      "Content-Type": "application/json",
-      ...(apiKey ? { "Authorization": `Bearer ${apiKey}` } : {})
-    },
-    body: JSON.stringify(payload),
-    signal
-  });
+  let attempt = 0;
+  const maxAttempts = 3;
+  let lastError: Error | null = null;
+  let res: Response | null = null;
 
-  if (!res.ok) throw new Error("API responded with " + res.status);
+  while (attempt < maxAttempts) {
+    attempt++;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+      
+      const onAbort = () => controller.abort();
+      if (signal) signal.addEventListener('abort', onAbort);
+
+      res = await fetch(endpoint, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(apiKey ? { "Authorization": `Bearer ${apiKey}` } : {})
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+      if (signal) signal.removeEventListener('abort', onAbort);
+
+      if (!res.ok) {
+        const isRetryable = [429, 500, 502, 503, 504].includes(res.status);
+        if (isRetryable && attempt < maxAttempts) {
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
+        throw new Error("API responded with " + res.status);
+      }
+      
+      break; // Success
+    } catch (e: any) {
+      lastError = e;
+      if (e.name === 'AbortError' && !signal?.aborted && attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt) * 1000;
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      if (attempt >= maxAttempts || signal?.aborted) throw e;
+    }
+  }
+
+  if (!res || !res.ok) throw lastError || new Error("Failed to fetch");
 
   if (stream && onChunk && res.body) {
     const reader = res.body.getReader();

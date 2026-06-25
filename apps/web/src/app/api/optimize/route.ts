@@ -3,160 +3,28 @@ import type { OptimizeRequest, OptimizeResponse } from '@promptly/types';
 import { buildSystemPrompt, buildUserPrompt, localOptimize, getLevelConfig } from '@promptly/prompt-engine';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
+import { requireEnv } from '@/lib/env';
+import { makeGeminiCall } from '@/services/ai';
+import { createOpenAIStream } from '@/services/streaming';
+import { checkQuotaAndTier, getDynamicApiKey } from '@/services/billing';
+import { validateOptimizeRequest } from '@/services/validators';
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_API_KEY_PREMIUM = process.env.GEMINI_API_KEY_PREMIUM || process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+const supabaseServiceKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 
-async function makeGeminiCall(systemPrompt: string, userPrompt: string, stream: boolean, config: { temperature: number, maxOutputTokens: number }, apiKey: string = GEMINI_API_KEY!) {
-  const endpoint = stream 
-    ? `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent?alt=sse&key=${apiKey}`
-    : `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      systemInstruction: {
-        parts: [{ text: systemPrompt }]
-      },
-      contents: [{
-        parts: [{ text: userPrompt }]
-      }],
-      generationConfig: {
-        temperature: config.temperature,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: config.maxOutputTokens,
-      }
-    })
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-  }
-
-  return response;
-}
-
-function createOpenAIStream(response: Response, logData?: { user: any, body: any, platform: string, supabase: any, supabaseUrl: string }) {
-  const encoder = new TextEncoder();
-  const decoder = new TextDecoder();
-  let accumulatedText = "";
-  let buffer = "";
-  
-  const transformStream = new TransformStream({
-    async transform(chunk, controller) {
-      const text = decoder.decode(chunk, { stream: true });
-      buffer += text;
-      const lines = buffer.split('\n');
-      buffer = lines.pop() ?? "";
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6);
-          if (dataStr === '[DONE]') continue;
-          
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.error) {
-              const errorChunk = {
-                choices: [{
-                  delta: { content: `\n[API Error: ${data.error.message || 'Unknown error during stream'}]` }
-                }]
-              };
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(errorChunk)}\n\n`));
-              continue;
-            }
-            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-              const content = data.candidates[0].content.parts[0].text;
-              accumulatedText += content;
-              const openAIChunk = {
-                choices: [{
-                  delta: { content }
-                }]
-              };
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify(openAIChunk)}\n\n`));
-            }
-          } catch (e) {
-            // Ignore parse errors for incomplete chunks
-          }
-        }
-      }
-    },
-    async flush() {
-      // The extension will handle logging this prompt to the history via /api/history
-      // to avoid dual-writes and RLS silent failures.
-    }
-  });
-
-  const readable = response.body?.pipeThrough(transformStream);
-  if (!readable) return new Response("Failed to start stream", { status: 500 });
-
-  const customReadable = new ReadableStream({
-    async start(controller) {
-      const reader = readable.getReader();
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        controller.enqueue(value);
-      }
-      controller.close();
-    },
-    async cancel() {
-      // The extension handles logging to history.
-    }
-  });
-
-  return new Response(customReadable, {
-    headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-    },
-  });
-}
 
 export async function POST(request: Request) {
   try {
     const bodyText = await request.text();
-    let body: OptimizeRequest;
-    try {
-      body = JSON.parse(bodyText) as OptimizeRequest;
-    } catch (parseError) {
-      return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+    const validation = validateOptimizeRequest(bodyText);
+    
+    if (validation.error) {
+      return NextResponse.json({ error: validation.error }, { status: validation.status });
     }
-
-    if (!body.text || !body.mode || !body.level) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Input length validation — prevents prompt injection & runaway Gemini bills
-    if (body.text.length > 8000) {
-      return NextResponse.json({ error: "Prompt too long. Maximum 8,000 characters." }, { status: 400 });
-    }
-    if (body.refinement && body.refinement.length > 1000) {
-      return NextResponse.json({ error: "Refinement instruction too long. Maximum 1,000 characters." }, { status: 400 });
-    }
-    if (body.context) {
-      for (const [field, value] of Object.entries(body.context)) {
-        if (typeof value === 'string' && value.length > 500) {
-          return NextResponse.json({ error: `Context field '${field}' too long. Maximum 500 characters.` }, { status: 400 });
-        }
-      }
-      // Validate websiteUrl to prevent injection via URL field
-      if (body.context.websiteUrl) {
-        try { new URL(body.context.websiteUrl); } catch {
-          body.context.websiteUrl = '';
-        }
-      }
-    }
+    const body = validation.body!;
 
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -164,15 +32,9 @@ export async function POST(request: Request) {
     }
     const token = authHeader.split(' ')[1];
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
-      // FIX 2.2: Never bypass auth in production. The old 'placeholder' check
-      // meant a deploy without NEXT_PUBLIC_SUPABASE_URL set got free expert access.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) {
-        console.warn("[DEV ONLY] Using placeholder Supabase URL. Bypassing auth for local development.");
-      } else {
-        return NextResponse.json({ error: "Invalid Access Token. Please log in again at proenpt.com." }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Invalid Access Token. Please log in again at proenpt.com." }, { status: 401 });
     }
 
     const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -188,61 +50,15 @@ export async function POST(request: Request) {
 
     let tier = 'free';
 
-    if (user && !supabaseUrl.includes('placeholder')) {
-      // --- Manual Usage Tracking (Bypasses missing increment_usage RPC) ---
-      const { data: usageData, error: usageError } = await supabaseUserClient.rpc('increment_usage', {
-        p_user_id: user.id,
-        p_is_regen: isRegeneration
-      });
-
-      if (usageError) {
-        console.error("Usage tracking error:", usageError);
-        return NextResponse.json({ error: "Usage tracking error. Please try again." }, { status: 500 });
+    if (user) {
+      const billingResult = await checkQuotaAndTier(supabaseUserClient, user.id, isRegeneration, hasContextMemory);
+      if (billingResult.error) {
+        return NextResponse.json({ error: billingResult.error }, { status: billingResult.status });
       }
-
-      if (!usageData || usageData.length === 0) {
-        return NextResponse.json({ error: "Usage tracking error. No data returned." }, { status: 500 });
-      }
-
-      tier = usageData[0].tier || 'free';
-
-      if (!usageData[0].allowed) {
-        const msg = tier === 'free' 
-          ? (isRegeneration ? "Regeneration limit reached for today (4/4). Upgrade to Pro." : "Daily limit reached (10/10). Upgrade to Pro for 50/day.")
-          : (isRegeneration ? "Regeneration limit reached for today (50/50). Upgrade to Expert." : "Daily limit reached (50/50). Upgrade to Expert for unlimited.");
-        return NextResponse.json({ error: msg }, { status: 403 });
-      }
-
-      // 1. Lock Context Memory for free AND pro
-      if (hasContextMemory && (tier === 'free' || tier === 'pro')) {
-        return NextResponse.json({ error: "Context Memory is locked. Upgrade to Expert." }, { status: 403 });
-      }
-
-    // --- Dynamic API Key Lookup ---
-    let dynamicApiKey = null;
-    try {
-      const { data: settingData } = await supabase
-        .from('SystemSetting')
-        .select('value')
-        .eq('key', 'optimize_key')
-        .single();
-      
-      if (settingData && settingData.value) {
-        const { data: keyData } = await supabase
-          .from('ApiKey')
-          .select('secret')
-          .eq('name', settingData.value)
-          .eq('enabled', true)
-          .single();
-          
-        if (keyData && keyData.secret) {
-          dynamicApiKey = keyData.secret;
-        }
-      }
-    } catch (e) {
-      console.error("Failed to fetch dynamic API key:", e);
+      tier = billingResult.tier;
     }
 
+    const dynamicApiKey = await getDynamicApiKey(supabaseAdmin, GEMINI_API_KEY);
     const FINAL_API_KEY = dynamicApiKey || GEMINI_API_KEY;
 
     if (!FINAL_API_KEY) {

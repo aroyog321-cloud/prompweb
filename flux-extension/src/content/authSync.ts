@@ -1,13 +1,33 @@
 // flux-extension/src/content/authSync.ts
 const STORAGE_KEY = "promptly_settings_v1";
 
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch(e) {
+    return null;
+  }
+}
+
 async function saveToken(token: string, apiBaseUrl: string) {
   try {
     if (!chrome.runtime?.id) return; // Context invalidated
     const res = await chrome.storage.local.get(STORAGE_KEY);
     if (!chrome.runtime?.id) return;
     const current = res[STORAGE_KEY] || {};
-    const next = { ...current, accessToken: token, apiBaseUrl };
+    
+    let expiresAt = null;
+    const jwt = parseJwt(token);
+    if (jwt && jwt.exp) {
+      expiresAt = jwt.exp * 1000; // Convert to ms
+    }
+    
+    const next = { ...current, accessToken: token, expiresAt, apiBaseUrl };
     await chrome.storage.local.set({ [STORAGE_KEY]: next });
     if (!chrome.runtime?.id) return;
     

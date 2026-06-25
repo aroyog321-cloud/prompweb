@@ -6,7 +6,16 @@ export async function getSettings(): Promise<PromptlySettings> {
   try {
     if (!chrome.runtime?.id) throw new Error("Extension context invalidated");
     const result = await chrome.storage.local.get(STORAGE_KEY);
-    const stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
+    let stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
+    
+    // Check expiration
+    if (stored?.accessToken && stored.expiresAt && Date.now() > stored.expiresAt) {
+      console.log("[Promptly] Access token expired. Clearing.");
+      stored = { ...stored, accessToken: undefined, expiresAt: undefined };
+      // Fire and forget update
+      chrome.storage.local.set({ [STORAGE_KEY]: stored }).catch(() => {});
+    }
+
     return { ...DEFAULT_SETTINGS, ...stored, contextProfile: { ...DEFAULT_SETTINGS.contextProfile, ...(stored?.contextProfile ?? {}) } };
   } catch (e) {
     console.warn("[Promptly] Failed to get settings, using defaults.", e);

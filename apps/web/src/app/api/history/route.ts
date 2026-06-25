@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
+import { requireEnv } from '@/lib/env';
+
+const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+const supabaseServiceKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 function getAuthToken(request: Request) {
   const authHeader = request.headers.get('authorization');
@@ -13,7 +15,7 @@ function getAuthToken(request: Request) {
 }
 
 async function getUser(token: string) {
-  const { data: { user }, error } = await supabase.auth.getUser(token);
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
   if (error) console.error("getUser error:", error);
   return error ? null : user;
 }
@@ -25,8 +27,6 @@ export async function GET(request: Request) {
 
     const user = await getUser(token);
     if (!user) {
-      // FIX 2.2: Never bypass auth in production.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) return NextResponse.json([]);
       return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
     }
 
@@ -61,8 +61,6 @@ export async function POST(request: Request) {
 
     const user = await getUser(token);
     if (!user) {
-      // FIX 2.2: Never bypass auth in production.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) return NextResponse.json({ success: true, message: "Mocked locally" });
       return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
     }
 

@@ -232,8 +232,25 @@ export default function DashboardPage() {
           </p>
         </header>
 
-        <div className="mb-8">
-
+        <div className="mb-8 bg-[#1a1a1c] border border-white/[0.04] rounded-2xl p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-sm font-semibold tracking-wide text-zinc-300">Optimization Metrics</h2>
+            <div className="text-xs text-zinc-500">Coming soon</div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="text-2xl font-bold text-white">0</div>
+              <div className="text-xs text-zinc-400 mt-1">Avg Latency (ms)</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white">0</div>
+              <div className="text-xs text-zinc-400 mt-1">Tokens Saved</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-white">--</div>
+              <div className="text-xs text-zinc-400 mt-1">Most Used Mode</div>
+            </div>
+          </div>
         </div>
 
         {/* Top Cards */}

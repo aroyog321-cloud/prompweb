@@ -55,22 +55,18 @@ ${sectionsToShow.map((s) => `- **${s}**`).join("\n")}
   }
 
   // ─── QUALITY STANDARD — the real differentiator ──────────────────────────
-  prompt += `## THE QUALITY BAR — what separates elite from average
-The following are the failure modes that make prompt engineers cringe. Your output must avoid every one:
-
-**ROLE** — The single biggest lever. A bad role is a job title ("a senior developer"). A good role is a specific person with a specific history, specific opinions, and specific things they care about. Bad: "an experienced data scientist." Good: "a Staff Data Scientist at a Series B fintech who has shipped 4 ML models to production, is allergic to over-engineering, and writes model cards as a first-class deliverable."
-
-**CONTEXT** — Don't describe categories; state facts. Bad: "a B2B software company targeting enterprise clients." Good: "a 12-person SaaS startup, 18 months post-launch, $2M ARR, 60% of revenue from 3 customers, currently preparing a Series A pitch." If the user didn't provide specifics, inject plausible concrete assumptions and label them as such.
-
-**OBJECTIVE** — One deliverable, stated with measurable criteria. Strip every vague word: replace "good" with a score or benchmark, "fast" with a time or token budget, "comprehensive" with a section count or word count. The model reading your prompt should know exactly when it's done.
-
-**CONSTRAINTS** — At least 2 explicit negative constraints. Not "be concise" (positive) — "Do NOT exceed 300 words" (negative). Negative constraints prevent the model's most predictable failure modes. Name the specific clichés, patterns, or assumptions to avoid.
-
-**OUTPUT FORMAT** — Specify the exact artifact. Not "a report" — "a 5-section Markdown report: Executive Summary (100 words max) → Problem Analysis → 3 Options with trade-offs → Recommendation → Open Questions." The more structural detail, the less guessing.
-
-**SUCCESS CRITERIA** — What does the output look like when it's done WELL? This is read by the AI model to self-evaluate before responding. Make it concrete: "A reader who skims only the headers should understand the recommendation. A skeptic should be able to find the counter-argument acknowledged in the Trade-offs section."
-
-${isExpert ? `**EDGE CASES & FAILURE MODES** — At expert level, name the 2-3 most likely ways the model could go wrong on this specific task, and instruct it to watch for them.\n\n` : ""}`;
+  prompt += `## QUALITY BAR\n`;
+  if (level === "light") {
+    prompt += `- Fix typos, structure the prompt with Markdown headers, and clarify the core objective.\n`;
+  } else if (level === "medium") {
+    prompt += `- Provide a specific ROLE (not just a title).\n- State a clear, measurable OBJECTIVE.\n- Define the precise OUTPUT FORMAT.\n`;
+  } else {
+    prompt += `- **ROLE**: Create a highly specific persona with distinct history and opinions.\n- **CONTEXT**: Inject concrete, factual assumptions if missing.\n- **OBJECTIVE**: State with strictly measurable criteria.\n- **CONSTRAINTS**: Include ≥2 negative ("Do NOT") constraints to prevent failure modes.\n- **OUTPUT FORMAT**: Specify exact sections and length.\n- **SUCCESS CRITERIA**: Define concrete evaluation rules.\n`;
+    if (isExpert) {
+      prompt += `- **EDGE CASES**: Name 2-3 likely failure modes and instruct the model to avoid them.\n`;
+    }
+  }
+  prompt += `\n`;
 
   // ─── PROCESS (level-gated) ────────────────────────────────────────────────
   prompt += `## HOW TO PRODUCE THE OUTPUT

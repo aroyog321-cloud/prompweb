@@ -53,6 +53,7 @@ model User {
   savedPrompts  SavedPrompt[]
   contextProfiles ContextProfile[]
   usageLogs     UsageLog[]
+  optimizationMetrics OptimizationMetric[]
   workspaceMembers WorkspaceMember[]
 
   @@index([email])
@@ -104,8 +105,9 @@ model PromptHistory {
   responseTime  Float?   // in seconds
   isStarred     Boolean  @default(false)
   createdAt     DateTime @default(now())
+  deletedAt     DateTime?
 
-  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt])
 }
 
@@ -121,6 +123,7 @@ model SavedPrompt {
   tags        String[]  // Array of strings for tagging
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([userId])
   @@index([isFavorite])
@@ -152,6 +155,7 @@ model Template {
   usageCount  Int @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([categoryId])
   @@index([authorId])
@@ -172,6 +176,7 @@ model ContextProfile {
   isDefault   Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
 
   @@index([userId])
   @@index([isDefault])
@@ -187,7 +192,7 @@ model UsageLog {
   metadata      Json?    // Flexible JSON for additional data
   createdAt     DateTime @default(now())
 
-  @@index([userId])
+  @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt])
   @@index([actionType])
 }
@@ -229,4 +234,21 @@ model ApiKey {
   secret    String
   enabled   Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model OptimizationMetric {
+  id        String       @id @default(cuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode      PromptMode?
+  level     RewriteLevel?
+  tokensIn  Int          @default(0)
+  tokensOut Int          @default(0)
+  latencyMs Int          @default(0)
+  platform  String?
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+  @@index([createdAt(sort: Desc)])
+  @@index([mode, level])
 }

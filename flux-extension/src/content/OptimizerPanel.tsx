@@ -28,7 +28,12 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
 
   useEffect(() => {
     const interval = setInterval(() => setPlaceholderIdx(prev => (prev + 1) % PLACEHOLDERS.length), 4000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const [settings, setSettings] = useState<PromptlySettings | null>(null);

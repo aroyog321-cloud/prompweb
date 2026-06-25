@@ -61,6 +61,7 @@ export interface PromptlySettings {
   categorizerApiUrl?: string;
   categorizerApiKey?: string;
   accessToken?: string;
+  expiresAt?: number;
   contextProfile: ContextProfile;
   contextInjectionEnabled: boolean;
 }

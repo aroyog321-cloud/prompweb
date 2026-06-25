@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
+import { requireEnv } from '@/lib/env';
+
+const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+const supabaseServiceKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: Request) {
   try {
@@ -14,14 +16,9 @@ export async function POST(request: Request) {
     }
     const token = authHeader.split(' ')[1];
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
-      // FIX 2.2: Never bypass auth in production.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) {
-        console.warn("[DEV ONLY] Using placeholder Supabase URL. Bypassing auth for local development.");
-      } else {
-        return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
     }
 
     if (!user) {
@@ -98,14 +95,9 @@ export async function GET(request: Request) {
     }
     const token = authHeader.split(' ')[1];
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
-      // FIX 2.2: Never bypass auth in production.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) {
-        return NextResponse.json([]);
-      } else {
-        return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
     }
 
     const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {

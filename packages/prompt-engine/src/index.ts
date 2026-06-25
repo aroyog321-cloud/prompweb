@@ -6,3 +6,4 @@ export * from "./buildUserPrompt";
 export * from "./localOptimize";
 export * from "./fewShotExamples";
 export * from "./utils";
+export * from "./scoring";

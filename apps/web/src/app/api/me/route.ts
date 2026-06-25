@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
+import { requireEnv } from '@/lib/env';
+
+const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
+const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey || supabaseAnonKey);
 
@@ -16,17 +18,7 @@ export async function GET(request: Request) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
-      // FIX 2.2: Never bypass auth in production.
-      if (process.env.NODE_ENV !== 'production' && supabaseUrl.includes('placeholder')) {
-        console.warn("[DEV ONLY] Using placeholder Supabase URL. Bypassing auth for local development.");
-        return NextResponse.json({
-          tier: 'free',
-          total_requests_today: 0,
-          contextProfile: null
-        });
-      } else {
-        return NextResponse.json({ error: "Invalid Access Token." }, { status: 401 });
-      }
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -37,7 +29,7 @@ export async function GET(request: Request) {
     let tier = 'free';
     let total_requests_today = 0;
     
-    if (!supabaseUrl.includes('placeholder')) {
+    if (user) {
       const { data: statsData, error: statsError } = await supabaseUserClient
         .from('usage_stats')
         .select('*')
@@ -55,7 +47,7 @@ export async function GET(request: Request) {
 
     // Try to load Extension Profile context
     let contextProfile = null;
-    if (!supabaseUrl.includes('placeholder')) {
+    if (user) {
       const { data: profileData, error: profileError } = await supabaseUserClient
         .from('ContextProfile')
         .select('*')
