@@ -2,17 +2,86 @@ import { DEFAULT_SETTINGS, PromptlySettings } from '@promptly/types';
 
 const STORAGE_KEY = "promptly_settings_v1";
 
+let refreshPromise: Promise<void> | null = null;
+
+function parseJwtExp(token: string): number | null {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const jwt = JSON.parse(jsonPayload);
+    return jwt.exp ? jwt.exp * 1000 : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function getSettings(): Promise<PromptlySettings> {
   try {
     if (!chrome.runtime?.id) throw new Error("Extension context invalidated");
     const result = await chrome.storage.local.get(STORAGE_KEY);
     let stored = result[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
     
-    // Check expiration
-    if (stored?.accessToken && stored.expiresAt && Date.now() > stored.expiresAt) {
-      console.log("[Promptly] Access token expired. Clearing.");
-      stored = { ...stored, accessToken: undefined, expiresAt: undefined };
-      // Fire and forget update
+    // Check expiration (refresh if within 1 minute of expiring, or already expired)
+    const isExpiredOrClose = stored?.accessToken && stored.expiresAt && Date.now() > stored.expiresAt - 60000;
+
+    if (isExpiredOrClose && stored?.refreshToken && stored?.supabaseUrl && stored?.supabaseAnonKey) {
+      if (!refreshPromise) {
+        console.log("[Promptly] Token expired or expiring soon. Attempting background refresh.");
+        refreshPromise = fetch(`${stored.supabaseUrl}/auth/v1/token?grant_type=refresh_token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": stored.supabaseAnonKey
+          },
+          body: JSON.stringify({ refresh_token: stored.refreshToken })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Refresh failed");
+          return res.json();
+        })
+        .then(async (data) => {
+          if (data.access_token && data.refresh_token) {
+            console.log("[Promptly] Background token refresh successful.");
+            const newExpiresAt = parseJwtExp(data.access_token) || (Date.now() + 3600 * 1000);
+            
+            // Re-fetch current from storage in case it changed while we were fetching
+            const latestRes = await chrome.storage.local.get(STORAGE_KEY);
+            const latestStored = latestRes[STORAGE_KEY] || {};
+            
+            const next = { 
+              ...latestStored, 
+              accessToken: data.access_token, 
+              refreshToken: data.refresh_token, 
+              expiresAt: newExpiresAt 
+            };
+            await chrome.storage.local.set({ [STORAGE_KEY]: next });
+          } else {
+            throw new Error("Invalid response");
+          }
+        })
+        .catch(async (e) => {
+          console.warn("[Promptly] Background token refresh failed. Clearing tokens.", e);
+          const latestRes = await chrome.storage.local.get(STORAGE_KEY);
+          const latestStored = latestRes[STORAGE_KEY] || {};
+          const next = { ...latestStored, accessToken: undefined, refreshToken: undefined, expiresAt: undefined };
+          await chrome.storage.local.set({ [STORAGE_KEY]: next });
+        })
+        .finally(() => {
+          refreshPromise = null;
+        });
+      }
+      
+      // Wait for the in-progress refresh to complete
+      await refreshPromise;
+      
+      // Re-read settings after refresh completes
+      const refreshedResult = await chrome.storage.local.get(STORAGE_KEY);
+      stored = refreshedResult[STORAGE_KEY] as Partial<PromptlySettings> | undefined;
+    } else if (stored?.accessToken && stored.expiresAt && Date.now() > stored.expiresAt) {
+      // Expired but no refresh token available
+      console.log("[Promptly] Access token expired (no refresh token). Clearing.");
+      stored = { ...stored, accessToken: undefined, refreshToken: undefined, expiresAt: undefined };
       chrome.storage.local.set({ [STORAGE_KEY]: stored }).catch(() => {});
     }
 

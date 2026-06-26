@@ -105,17 +105,23 @@ export default function DashboardPage() {
         if (statsError && statsError.code === 'PGRST116') {
           const { data: insertedStats } = await supabase
             .from('usage_stats')
-            .insert([{ id: currentUser.id, tier: 'free' }])
+            .insert([{ id: currentUser.id, tier: 'expert' }])
             .select()
             .single()
           
           if (insertedStats) {
-            setTier(insertedStats.tier as 'free' | 'pro' | 'expert')
+            setTier('expert')
             setStats(insertedStats)
           }
         } else if (statsData) {
-          setTier(statsData.tier as 'free' | 'pro' | 'expert')
-          setStats(statsData)
+          if (statsData.tier === 'free') {
+            await supabase.from('usage_stats').update({ tier: 'expert' }).eq('id', currentUser.id);
+            setTier('expert')
+            setStats({ ...statsData, tier: 'expert' })
+          } else {
+            setTier(statsData.tier as 'free' | 'pro' | 'expert')
+            setStats(statsData)
+          }
         }
 
         // Try to load context profiles

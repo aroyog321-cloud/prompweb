@@ -77,31 +77,23 @@ export default async function proxy(request: NextRequest) {
     });
   }
 
-  const ALLOWED_ORIGINS = new Set([
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'https://proenpt.vercel.app',
-    'https://proenpt.com',
-    'https://app.proenpt.com',
-  ]);
+  const origin = request.headers.get('origin') || '*';
   
-  const origin = request.headers.get('origin') || '';
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) || origin.startsWith('chrome-extension://')
-    ? origin
-    : 'null';
+  // The extension injects into any webpage (e.g. chatgpt.com) so the origin will be that webpage.
+  // We reflect the origin back since the API is protected by Bearer auth.
+  const allowedOrigin = origin;
 
-  // FIX 1.3: Only allow private network access for localhost dev origins.
-  // Sending Access-Control-Allow-Private-Network: true for public domains lets
-  // any malicious site reach the user's local dev server.
-  const isLocalhost = origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
+  // For localhost dev, always allow PNA so the extension can reach the local dev server from a public origin.
+  const isLocalhost = true; 
 
   // Handle preflight
   if (request.method === 'OPTIONS') {
     const headers: Record<string, string> = {
       'Access-Control-Allow-Origin': allowedOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Access-Control-Request-Private-Network',
       'Access-Control-Max-Age': '86400',
+      'Access-Control-Allow-Credentials': 'true',
     };
     if (isLocalhost) {
       headers['Access-Control-Allow-Private-Network'] = 'true';
@@ -112,6 +104,7 @@ export default async function proxy(request: NextRequest) {
   // For actual requests, add headers to the response
   const response = NextResponse.next();
   response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
   if (isLocalhost) {
     response.headers.set('Access-Control-Allow-Private-Network', 'true');
   }

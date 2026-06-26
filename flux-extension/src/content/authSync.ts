@@ -27,7 +27,7 @@ function parseJwt(token: string) {
   }
 }
 
-async function saveToken(token: string, apiBaseUrl: string) {
+async function saveToken(token: string, refreshToken: string, supabaseUrl: string, supabaseAnonKey: string, apiBaseUrl: string) {
   try {
     if (!chrome.runtime?.id) return; // Context invalidated
     const res = await chrome.storage.local.get(STORAGE_KEY);
@@ -40,7 +40,7 @@ async function saveToken(token: string, apiBaseUrl: string) {
       expiresAt = jwt.exp * 1000; // Convert to ms
     }
     
-    const next = { ...current, accessToken: token, expiresAt, apiBaseUrl };
+    const next = { ...current, accessToken: token, refreshToken, supabaseAnonKey, expiresAt, apiBaseUrl };
     await chrome.storage.local.set({ [STORAGE_KEY]: next });
     if (!chrome.runtime?.id) return;
     
@@ -112,7 +112,7 @@ window.addEventListener("message", async (event) => {
     }
     seenNonces.set(data.nonce, Date.now());
     
-    await saveToken(data.token, window.location.origin);
+    await saveToken(data.token, data.refreshToken, data.supabaseUrl, data.supabaseAnonKey, window.location.origin);
   } else if (data.type === "PROMPTLY_LOGOUT") {
     try {
       if (!chrome.runtime?.id) return;

@@ -123,16 +123,20 @@ export const POST = withMetrics(async (request: Request) => {
         const rawLevel = body.level?.toUpperCase() ?? 'MEDIUM';
         const LEVEL_MAP: Record<string, string> = {
           'LIGHT': 'LIGHT', 'MEDIUM': 'MEDIUM', 'AGGRESSIVE': 'AGGRESSIVE', 'EXPERT': 'EXPERT',
-          'BASIC': 'BASIC', 'PROFESSIONAL': 'PROFESSIONAL', 'STAFF+': 'STAFF_PLUS', 'RESEARCH': 'RESEARCH', 'PRODUCTION AUDIT': 'PRODUCTION_AUDIT'
+          'BASIC': 'LIGHT', 'PROFESSIONAL': 'MEDIUM', 'STAFF+': 'AGGRESSIVE', 'RESEARCH': 'AGGRESSIVE', 'PRODUCTION AUDIT': 'EXPERT'
         };
         const mappedLevel = LEVEL_MAP[rawLevel] || 'MEDIUM';
+        
+        let mappedMode = (resolvedMode as string)?.toUpperCase()?.replace('-', '_') ?? 'GENERAL';
+        const VALID_MODES = ['GENERAL', 'DEVELOPER', 'DESIGNER', 'MARKETING', 'RESEARCH', 'BUSINESS', 'CONTENT_CREATOR', 'STARTUP_FOUNDER'];
+        if (!VALID_MODES.includes(mappedMode)) mappedMode = 'GENERAL';
 
         await supabaseUserClient.from('PromptHistory').insert([{
           userId: user.id,
           originalPrompt: body.text,
           optimizedPrompt: optimizedText,
           platformUsed: platform || body.platform || 'api',
-          promptMode: (resolvedMode as string)?.toUpperCase() ?? 'GENERAL',
+          promptMode: mappedMode,
           rewriteLevel: mappedLevel,
           responseTime,
         }]).throwOnError();
