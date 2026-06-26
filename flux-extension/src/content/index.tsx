@@ -233,9 +233,7 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
   const playSuccessSound = () => {
     // Subtle, muted "pop" sound using base64
-    const audio = new Audio("data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
-    audio.volume = 0.2;
-    audio.play().catch(() => {});
+
   };
 
   const handleReplace = async (text: string) => {
