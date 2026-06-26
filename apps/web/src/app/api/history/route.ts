@@ -96,7 +96,13 @@ export async function POST(request: Request) {
       LIGHT: "LIGHT",
       MEDIUM: "MEDIUM",
       AGGRESSIVE: "AGGRESSIVE",
-      EXPERT: "EXPERT"
+      EXPERT: "EXPERT",
+      // Legacy to New mappings
+      BASIC: "LIGHT",
+      PROFESSIONAL: "MEDIUM",
+      "STAFF+": "AGGRESSIVE",
+      RESEARCH: "EXPERT",
+      "PRODUCTION AUDIT": "EXPERT"
     };
 
     const rawMode = (body.promptMode || body.mode || "").toString().replace(/-/g, "_").toUpperCase();

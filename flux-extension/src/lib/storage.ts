@@ -16,6 +16,19 @@ export async function getSettings(): Promise<PromptlySettings> {
       chrome.storage.local.set({ [STORAGE_KEY]: stored }).catch(() => {});
     }
 
+    // Migrate legacy levels
+    if (stored?.defaultLevel) {
+      const map: Record<string, any> = {
+        light: "Basic",
+        medium: "Professional",
+        aggressive: "Staff+",
+        expert: "Production Audit"
+      };
+      if (map[stored.defaultLevel]) {
+        stored.defaultLevel = map[stored.defaultLevel];
+      }
+    }
+
     return { ...DEFAULT_SETTINGS, ...stored, contextProfile: { ...DEFAULT_SETTINGS.contextProfile, ...(stored?.contextProfile ?? {}) } };
   } catch (e) {
     console.warn("[Promptly] Failed to get settings, using defaults.", e);

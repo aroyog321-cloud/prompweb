@@ -41,7 +41,7 @@ export function scorePrompt(promptText: string, level: RewriteLevel): PromptScor
   }
 
   // Level-specific checks
-  if (level === 'aggressive' || level === 'expert') {
+  if (level === 'Staff+' || level === 'Research' || level === 'Production Audit') {
     if (!lowerPrompt.includes('format') && !lowerPrompt.includes('output')) {
       score -= 10;
       feedback.push("For advanced prompts, explicitly define the desired output format.");

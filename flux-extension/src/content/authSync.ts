@@ -2,9 +2,17 @@
 const STORAGE_KEY = "promptly_settings_v1";
 
 // Nonce store: rejects replayed auth token messages within the 30s validity window.
-// Using a bounded Set; entries are never removed (nonces are one-time-use by definition).
-// In practice this only ever holds a handful of entries per page load.
-const seenNonces = new Set<string>();
+// Using a Map to store timestamp for lazy cleanup.
+const seenNonces = new Map<string, number>();
+
+function pruneNonces() {
+  const now = Date.now();
+  for (const [nonce, timestamp] of seenNonces.entries()) {
+    if (now - timestamp > 60000) {
+      seenNonces.delete(nonce);
+    }
+  }
+}
 
 function parseJwt(token: string) {
   try {
@@ -64,6 +72,8 @@ announceInterval = setInterval(() => {
 }, 2000);
 
 window.addEventListener("message", async (event) => {
+  pruneNonces();
+  
   // Accept same-origin and our known dev/prod origins
   const allowed = [
     "http://localhost:3000", 
@@ -100,7 +110,7 @@ window.addEventListener("message", async (event) => {
       console.warn("[Promptly] Ignored PROMPTLY_AUTH_TOKEN: missing or replayed nonce.");
       return;
     }
-    seenNonces.add(data.nonce);
+    seenNonces.set(data.nonce, Date.now());
     
     await saveToken(data.token, window.location.origin);
   } else if (data.type === "PROMPTLY_LOGOUT") {

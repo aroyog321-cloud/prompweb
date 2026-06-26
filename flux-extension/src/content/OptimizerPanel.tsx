@@ -81,7 +81,14 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "c" && optimizedText && !isStreaming) {
         if (window.getSelection()?.toString()) return;
         e.preventDefault();
-        navigator.clipboard.writeText(optimizedText);
+        
+        let textToCopy = optimizedText;
+        const match = textToCopy.match(/## Improved Prompt\s+([\s\S]*?)(?=## Why This Version Is Better|$)/i);
+        if (match && match[1]) {
+          textToCopy = match[1].trim();
+        }
+        
+        navigator.clipboard.writeText(textToCopy);
         setToast("Copied ✓");
         setTimeout(() => setToast(null), 2000);
       }
@@ -207,6 +214,12 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
       }
       
       let finalOutput = optimizedText;
+      
+      const match = finalOutput.match(/## Improved Prompt\s+([\s\S]*?)(?=## Why This Version Is Better|$)/i);
+      if (match && match[1]) {
+        finalOutput = match[1].trim();
+      }
+
       if (fillingVariables) {
         Object.entries(variableValues).forEach(([key, value]) => {
           if (value.trim()) {

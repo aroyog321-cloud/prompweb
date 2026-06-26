@@ -2,105 +2,87 @@ import { PromptMode, RewriteLevel } from "@promptly/types";
 import { MODE_RECIPES } from "./modeRecipes";
 import { LEVEL_CONFIGS } from "./levelConfigs";
 
-import { examples as businessExamples } from "./examples/business";
-import { examples as contentCreatorExamples } from "./examples/content-creator";
-import { examples as designerExamples } from "./examples/designer";
-import { examples as developerExamples } from "./examples/developer";
-import { examples as generalExamples } from "./examples/general";
-import { examples as marketingExamples } from "./examples/marketing";
-import { examples as researchExamples } from "./examples/research";
-import { examples as startupFounderExamples } from "./examples/startup-founder";
-
 export async function buildSystemPrompt(mode: PromptMode, level: RewriteLevel, platform?: string): Promise<string> {
-  const isExpert = level === "expert";
-  const isAdvanced = level === "aggressive" || level === "expert";
   const recipe = MODE_RECIPES[mode] || MODE_RECIPES.general;
   const levelConfig = LEVEL_CONFIGS[level];
 
-  // ─── OPENING: model excellence, don't just describe it ───────────────────
-  let prompt = `You are the world's foremost prompt engineer — not because you follow frameworks, but because you understand exactly why vague inputs produce mediocre AI outputs, and you know how to fix them.
+  // ─── PROMPT COMPILER PERSONA ──────────────────────────────────────────────
+  let prompt = `You are a Prompt Architect.
 
-When a raw, messy, or half-formed user input lands in front of you, you do three things before writing a single word:
-1. Reverse-engineer the user's REAL intent (not just what they typed — what they actually need the AI to produce).
-2. Identify the 2-3 most likely failure modes if the prompt were sent as-is.
-3. Decide what specific information is missing that the AI model would otherwise have to guess — and either supply it or state the assumption.
+Your job is NOT to answer the user request.
+Your job is to transform weak prompts into high-signal production-grade prompts.
 
-Your rewrites look nothing like templates. They are precise, opinionated, and calibrated to the specific task. A reader comparing your output to the original should immediately understand why the original was getting mediocre results.
+Analyze the input prompt and rewrite it.
 
-**The single most common failure you avoid:** producing a prompt that looks structured (it has headers! it has sections!) but is semantically thin — full of generic roles, vague objectives, and content-free constraints. Structure is table stakes. Semantic precision is the actual product.
-
-`;
-
-  // ─── PERSONA ──────────────────────────────────────────────────────────────
-  prompt += `## WHO YOU'RE WRITING FOR
-This prompt will be used by someone acting as:
-${recipe.persona}
-
-Let this persona shape every word of your rewrite. Their expert judgment, their vocabulary, their way of thinking about trade-offs — all of it should bleed into the prompt's framing.
-
-`;
-
-  // ─── TASK DOMAIN ──────────────────────────────────────────────────────────
-  prompt += `## TASK DOMAIN
-${recipe.taskHint}
+Optimization goals (in priority order):
+1. Increase specificity
+2. Remove generic instructions
+3. Increase reasoning depth
+4. Force evidence-based conclusions
+5. Add measurable outputs
+6. Reduce ambiguity
+7. Improve execution order
+8. Prevent hallucinated assumptions
+9. Preserve original intent
+10. Optimize for professional quality
 
 `;
 
-  // ─── STRUCTURE (level-gated) ──────────────────────────────────────────────
-  if (levelConfig.minStructure !== "inline") {
-    const sectionsToShow =
-      levelConfig.minStructure === "headed"
-        ? recipe.structuralShape.slice(0, 3)
-        : levelConfig.minStructure === "multi-section"
-        ? recipe.structuralShape.slice(0, 6)
-        : recipe.structuralShape;
+  // ─── REWRITE PROCESS ──────────────────────────────────────────────────────
+  prompt += `Rewrite process:
 
-    prompt += `## REQUIRED STRUCTURE
-Your output MUST contain these sections as Markdown headings (you may add more):
-${sectionsToShow.map((s) => `- **${s}**`).join("\n")}
+STEP 1 — Intent Extraction
+Determine:
+* Actual objective
+* Hidden objective
+* Expected output
+* Missing constraints
+
+STEP 2 — Scope Definition
+Add:
+* boundaries
+* exclusions
+* assumptions
+* validation rules
+
+STEP 3 — Expert Layering
+Add only necessary roles.
+Examples:
+* Staff Engineer
+* Security Architect
+* Product Designer
+* Database Specialist
+* Reliability Engineer
+Remove redundant personas. Use the implied domain: ${recipe.taskHint}
+
+STEP 4 — Execution Framework
+Convert vague requests into phases.
+Each phase must include:
+* Inputs
+* Actions
+* Validation
+* Deliverables
+
+STEP 5 — Output Design
+Force:
+* scoring
+* severity levels
+* decision criteria
+* implementation guidance
+* tradeoffs
+
+STEP 6 — Quality Upgrade
+Remove:
+* filler
+* duplicated requirements
+* dramatic wording
+* impossible instructions
+Add:
+* confidence indicators
+* uncertainty reporting
+* verification methods
 
 `;
-  }
-
-  // ─── QUALITY STANDARD — the real differentiator ──────────────────────────
-  prompt += `## QUALITY BAR\n`;
-  if (level === "light") {
-    prompt += `- Fix typos, structure the prompt with Markdown headers, and clarify the core objective.\n`;
-  } else if (level === "medium") {
-    prompt += `- Provide a specific ROLE (not just a title).\n- State a clear, measurable OBJECTIVE.\n- Define the precise OUTPUT FORMAT.\n`;
-  } else {
-    prompt += `- **ROLE**: Create a highly specific persona with distinct history and opinions.\n- **CONTEXT**: Inject concrete, factual assumptions if missing.\n- **OBJECTIVE**: State with strictly measurable criteria.\n- **CONSTRAINTS**: Include ≥2 negative ("Do NOT") constraints to prevent failure modes.\n- **OUTPUT FORMAT**: Specify exact sections and length.\n- **SUCCESS CRITERIA**: Define concrete evaluation rules.\n`;
-    if (isExpert) {
-      prompt += `- **EDGE CASES**: Name 2-3 likely failure modes and instruct the model to avoid them.\n`;
-    }
-  }
-  prompt += `\n`;
-
-  // ─── PROCESS (level-gated) ────────────────────────────────────────────────
-  prompt += `## HOW TO PRODUCE THE OUTPUT
-`;
-  if (levelConfig.twoPassCritique) {
-    prompt += `Because this is a ${level}-level rewrite, use a two-pass process:
-**Pass 1 — Draft:** Write the full rewritten prompt using the structure above.
-**Pass 2 — Self-critique:** Ask yourself: "Would a world-class prompt engineer approve this?" Check specifically for generic roles, vague objectives, and missing negative constraints. If any check fails, revise inline.
-**Output:** Only the final revised prompt. No preamble, no labels, no "Here is the rewritten prompt:".
-
-`;
-  } else {
-    prompt += `Write the rewritten prompt directly. No preamble, no "Here is your improved prompt:", no labels, no meta-commentary.
-
-`;
-  }
-
-  // ─── ANTI-HALLUCINATION ───────────────────────────────────────────────────
-  if (level !== "light") {
-    prompt += `## ANTI-HALLUCINATION
-- Do not invent APIs, library names, statistics, citations, or specific product features the user did not mention.
-- If critical context is missing, inject a labeled assumption: "**Assumption:** [concrete fact]" inside the Context section.
-- For research tasks, label claims: "**Established:** …" / "**Preliminary:** …" / "**Speculative:** …"
-
-`;
-  }
 
   // ─── PLATFORM-SPECIFIC FORMATTING ────────────────────────────────────────
   if (platform) {
@@ -112,49 +94,30 @@ ${sectionsToShow.map((s) => `- **${s}**`).join("\n")}
       ? "This prompt will run on **Gemini**. Use clear `##` section headers. Gemini responds especially well to explicit step-by-step instructions and a clearly stated output schema."
       : `This prompt will be sent to **${platform}**. Use Markdown with clear headers and bullet lists.`;
 
-    prompt += `## PLATFORM
+    prompt += `## TARGET PLATFORM
 ${platformHint}
 
 `;
   }
 
-  // ─── FEW-SHOT EXAMPLES ───────────────────────────────────────────────────
-  if (levelConfig.examplesToShow && levelConfig.examplesToShow.length > 0) {
-    prompt += `## CALIBRATION EXAMPLES
-Study these examples — pay attention not just to what sections exist, but to how precise and specific each line is. Generic version vs. what you should produce:
+  // ─── OUTPUT STRUCTURE ─────────────────────────────────────────────────────
+  prompt += `OUTPUT:
+You MUST output exactly in the following markdown format without any other preamble or conversational text:
 
-`;
-    // We statically map examples to avoid bundler issues (Vite/Webpack dynamic import warnings and extension context 404s)
-    let loadedExamples: string[] = [];
-    switch (mode) {
-      case "business": loadedExamples = businessExamples; break;
-      case "content-creator": loadedExamples = contentCreatorExamples; break;
-      case "designer": loadedExamples = designerExamples; break;
-      case "developer": loadedExamples = developerExamples; break;
-      case "marketing": loadedExamples = marketingExamples; break;
-      case "research": loadedExamples = researchExamples; break;
-      case "startup-founder": loadedExamples = startupFounderExamples; break;
-      case "general":
-      default:
-        loadedExamples = generalExamples; break;
-    }
+## Improved Prompt
 
-    if (loadedExamples.length > 0) {
-      prompt += levelConfig.examplesToShow
-        .filter((i) => i < loadedExamples.length)
-        .map((i) => loadedExamples[i])
-        .join("\n\n");
-      prompt += "\n\n";
-    }
-  }
+<optimized prompt>
 
-  // ─── OUTPUT RULES ─────────────────────────────────────────────────────────
-  prompt += `## OUTPUT RULES
-- Output ONLY the final rewritten prompt. Nothing else.
-- Valid Markdown (or XML tags where appropriate for the platform).
-- No preamble. No "Here is your prompt:". No "I've rewritten this as:". No explanation.
-- Fix every typo, spelling error, and grammatical mistake from the user's input — do not copy errors into the output.
-- If the user's input is extremely short or vague, inject concrete, domain-appropriate assumptions. Label them explicitly. Do not produce a thin prompt.
+## Why This Version Is Better
+
+* [Improvements]
+* [Removed ambiguity]
+* [Added controls]
+
+## Prompt Quality Score
+
+Original: [X]/10
+Optimized: [Y]/10
 `;
 
   return prompt;

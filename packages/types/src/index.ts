@@ -9,7 +9,7 @@ export type PromptMode =
   | "content-creator"
   | "startup-founder";
 
-export type RewriteLevel = "light" | "medium" | "aggressive" | "expert";
+export type RewriteLevel = "Basic" | "Professional" | "Staff+" | "Research" | "Production Audit";
 
 export type PromptStyle = "neutral" | "formal" | "conversational" | "academic" | "creative" | "direct";
 
@@ -26,10 +26,11 @@ export const PROMPT_MODES: { value: PromptMode; label: string }[] = [
 ];
 
 export const REWRITE_LEVELS: { value: RewriteLevel; label: string; description: string }[] = [
-  { value: "light", label: "Light", description: "Minor clarity tweaks, keeps original phrasing" },
-  { value: "medium", label: "Medium", description: "Adds structure and missing context" },
-  { value: "aggressive", label: "Aggressive", description: "Fully restructures into a detailed brief" },
-  { value: "expert", label: "Expert", description: "Maximum detail, constraints, and output spec" }
+  { value: "Basic", label: "Basic", description: "Standard prompt expansion and formatting" },
+  { value: "Professional", label: "Professional", description: "Adds structure, constraints, and methodologies" },
+  { value: "Staff+", label: "Staff+", description: "High-signal constraints, edge-case handling, and rigid output spec" },
+  { value: "Research", label: "Research", description: "Forces evidence requirements, uncertainty reporting, and verification" },
+  { value: "Production Audit", label: "Production Audit", description: "Maximum rigor, defining severity, scoring, and deep tradeoffs" }
 ];
 
 export const PROMPT_STYLES: { value: PromptStyle; label: string; description: string }[] = [
@@ -69,7 +70,7 @@ export interface PromptlySettings {
 export const DEFAULT_SETTINGS: PromptlySettings = {
   theme: "dark",
   defaultMode: "general",
-  defaultLevel: "medium",
+  defaultLevel: "Professional",
   defaultStyle: "neutral",
   shortcutEnabled: true,
   apiBaseUrl: "https://proenpt.vercel.app",
@@ -91,6 +92,7 @@ export interface OptimizeRequest {
   refinement?: string;
   previousPrompt?: string;
   platform?: string;
+  reasoningDepth?: number;
 }
 
 export interface OptimizeResponse {

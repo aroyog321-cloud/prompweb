@@ -68,7 +68,12 @@ export async function makeGeminiCall(
       return response;
     } catch (e: any) {
       lastError = e;
-      if ((e.name === 'AbortError' || e.name === 'TimeoutError') && attempt < maxAttempts) {
+      
+      if (routeSignal?.aborted || e.name === 'AbortError') {
+        throw e;
+      }
+      
+      if (e.name === 'TimeoutError' && attempt < maxAttempts) {
         const delay = Math.pow(2, attempt) * 1000;
         await new Promise(res => setTimeout(res, delay));
         continue;

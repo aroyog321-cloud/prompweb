@@ -18,10 +18,19 @@ const GEMINI_API_KEY_PREMIUM = process.env.GEMINI_API_KEY_PREMIUM;
 
 export const POST = withMetrics(async (request: Request) => {
   const routeController = new AbortController();
-  const routeTimeout = setTimeout(() => routeController.abort(), 50000); // 50s route timeout
-
+  let routeTimeout: ReturnType<typeof setTimeout>;
+  
   const startTime = Date.now();
   try {
+    routeTimeout = setTimeout(() => routeController.abort(), 50000); // 50s route timeout
+
+    const MAX_BYTES = Number(process.env.MAX_OPTIMIZE_REQUEST_BYTES ?? 65536);
+    const size = Number(request.headers.get("content-length") ?? 0);
+    
+    if (!Number.isFinite(size) || size > MAX_BYTES) {
+      return NextResponse.json({ error: "Payload too large" }, { status: 413 });
+    }
+
     const bodyText = await request.text();
     const validation = validateOptimizeRequest(bodyText);
     
@@ -36,7 +45,7 @@ export const POST = withMetrics(async (request: Request) => {
     }
     const { user, supabaseUserClient, supabaseAdmin } = authRes;
 
-    const isTwoPass = body.level === "aggressive" || body.level === "expert";
+    const isTwoPass = body.level === "Staff+" || body.level === "Research" || body.level === "Production Audit";
     const isRegeneration = !!body.refinement || !!body.previousPrompt;
     const hasContextMemory = !!body.context && Object.values(body.context).some(v => !!v);
 
@@ -98,10 +107,7 @@ export const POST = withMetrics(async (request: Request) => {
       isTwoPass, 
       activeApiKey, 
       !!body.stream,
-      routeController.signal
     );
-
-    clearTimeout(routeTimeout);
 
     if (body.stream) {
       return createOpenAIStream(finalRes, { user, body, platform: platform || "api", supabase: supabaseUserClient });
@@ -115,18 +121,27 @@ export const POST = withMetrics(async (request: Request) => {
 
       const responseTime = (Date.now() - startTime) / 1000;
 
-      // Persist history server-side — do not rely on the extension to POST separately.
-      // Fire-and-forget: non-fatal if it fails.
-      supabaseUserClient.from('PromptHistory').insert([{
-        userId: user.id,
-        originalPrompt: body.text,
-        optimizedPrompt: optimizedText,
-        platformUsed: platform || body.platform || 'api',
-        promptMode: (resolvedMode as string)?.toUpperCase() ?? 'GENERAL',
-        rewriteLevel: body.level?.toUpperCase() ?? 'MEDIUM',
-        responseTime,
-      }]).then(({ error }) => {
-        if (error) console.error('[Promptly] PromptHistory insert failed:', error.message);
+      const saveHistory = async () => {
+        const rawLevel = body.level?.toUpperCase() ?? 'MEDIUM';
+        const LEVEL_MAP: Record<string, string> = {
+          'LIGHT': 'LIGHT', 'MEDIUM': 'MEDIUM', 'AGGRESSIVE': 'AGGRESSIVE', 'EXPERT': 'EXPERT',
+          'BASIC': 'LIGHT', 'PROFESSIONAL': 'MEDIUM', 'STAFF+': 'AGGRESSIVE', 'RESEARCH': 'EXPERT', 'PRODUCTION AUDIT': 'EXPERT'
+        };
+        const mappedLevel = LEVEL_MAP[rawLevel] || 'MEDIUM';
+
+        await supabaseUserClient.from('PromptHistory').insert([{
+          userId: user.id,
+          originalPrompt: body.text,
+          optimizedPrompt: optimizedText,
+          platformUsed: platform || body.platform || 'api',
+          promptMode: (resolvedMode as string)?.toUpperCase() ?? 'GENERAL',
+          rewriteLevel: mappedLevel,
+          responseTime,
+        }]).throwOnError();
+      };
+      
+      saveHistory().catch(err => {
+        console.error('[Promptly] PromptHistory insert failed:', err.message || err);
       });
 
       return NextResponse.json<OptimizeResponse>({
@@ -136,7 +151,6 @@ export const POST = withMetrics(async (request: Request) => {
     }
 
   } catch (error: any) {
-    clearTimeout(routeTimeout);
     const duration = Date.now() - startTime;
 
     if (error.name === 'AbortError' || error.name === 'TimeoutError') {
@@ -150,5 +164,7 @@ export const POST = withMetrics(async (request: Request) => {
       { error: "Internal server error" },
       { status: 500 }
     );
+  } finally {
+    clearTimeout(routeTimeout!);
   }
 });

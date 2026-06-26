@@ -27,7 +27,7 @@ export function localOptimize(req: OptimizeRequest): string {
   const ctxLine = contextLine(context);
   const roleString = LOCAL_ROLES[mode] || LOCAL_ROLES.general;
 
-  if (level === "light") {
+  if (level === "Basic") {
     const parts = [`Act as ${roleString}.`];
     parts.push(`\n${capitalize(trimmed)}.`);
     if (ctxLine) parts.push(`\nContext: ${ctxLine}`);
@@ -56,10 +56,10 @@ export function localOptimize(req: OptimizeRequest): string {
   if (mode === "designer") lines.push(`- Prioritize UX, a11y, and user mental models.`);
   if (mode === "business") lines.push(`- Use MECE frameworks and ROI-driven logic.`);
 
-  if (level === "aggressive" || level === "expert") {
+  if (level === "Staff+" || level === "Research" || level === "Production Audit") {
     lines.push(`\n# Formatting`);
     lines.push(`- Use clear Markdown headings and bullet points.`);
-    if (level === "expert") {
+    if (level === "Production Audit" || level === "Research") {
       lines.push(`\n# Critical Constraints`);
       lines.push(`- Avoid fluff and generic filler.`);
       lines.push(`- Perform a step-by-step analysis before providing the final answer.`);

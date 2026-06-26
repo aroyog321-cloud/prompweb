@@ -288,10 +288,13 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
     setOrbLoading(true);
 
     try {
-      // FIX 3.16: Respect the user's chosen level. Previously "light" was silently
-      // upgraded to "aggressive", which contradicts the UI and charges higher quota.
-      // Only fall back if no level is set at all.
-      const level = settings.defaultLevel || "medium";
+      // Default to "Staff+" for double-click to ensure high-quality prompt synthesis
+      // without needing the full panel.
+      const level = settings.defaultLevel === "Production Audit" 
+        ? "Production Audit" 
+        : settings.defaultLevel === "Research"
+          ? "Research"
+          : "Staff+";
 
       if (!isRegenerating && settings.defaultMode === "auto") {
         showToast("Auto-detecting mode...", "info");
@@ -323,7 +326,13 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
         showToast(`Optimized with local fallback (lower quality): ${result.degradedReason}`, "info");
       }
 
-      writeInputText(input, result.optimized);
+      let finalOutput = result.optimized;
+      const match = finalOutput.match(/## Improved Prompt\s+([\s\S]*?)(?=## Why This Version Is Better|$)/i);
+      if (match && match[1]) {
+        finalOutput = match[1].trim();
+      }
+
+      writeInputText(input, finalOutput);
 
 
       history.add({

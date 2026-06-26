@@ -300,15 +300,19 @@ ${draftText}`;
           } catch (e) {}
           
           if (res.status === 401) {
-            // Token is invalid/expired. Request re-auth instead of wiping permanently.
-            if (typeof chrome !== 'undefined' && chrome.tabs) {
-              chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-                if (tabs[0]?.id) {
-                  chrome.tabs.sendMessage(tabs[0].id, { type: "PROMPTLY_REAUTH_REQUEST" });
-                }
-              });
-              try { chrome.storage.local.remove('apiPlanCache'); } catch(e){}
+            // Token is invalid/expired. Clear it so the user is prompted to log in again.
+            if (typeof chrome !== 'undefined' && chrome.storage) {
+              try {
+                chrome.storage.local.get("promptly_settings_v1", (res) => {
+                  const stored = res["promptly_settings_v1"];
+                  if (stored) {
+                    chrome.storage.local.set({ promptly_settings_v1: { ...stored, accessToken: undefined, expiresAt: undefined } });
+                  }
+                });
+                chrome.storage.local.remove('apiPlanCache');
+              } catch(e){}
             }
+            throw new Error(`401: ${errorMsg}`);
           }
           
           throw new Error(errorMsg);
@@ -363,8 +367,8 @@ ${draftText}`;
         throw new Error("Malformed API response");
       }
     } catch (e) {
-      if (e instanceof Error && (e.message.includes("401") || e.message.includes("403"))) {
-        throw e; // Do not fallback to local if unauthorized
+      if (e instanceof Error && (e.message.includes("401") || e.message.includes("403") || e.name === "AbortError" || e.message.includes("aborted"))) {
+        throw e; // Do not fallback to local if unauthorized or aborted
       }
       
       // Attempt to extract the clean message without the 'Error: ' prefix
