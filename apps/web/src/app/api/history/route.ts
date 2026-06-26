@@ -3,8 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireEnv } from '@/lib/env';
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL');
-const supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+// Unused variables removed to prevent initialization crash
 
 function getAuthToken(request: Request) {
   const authHeader = request.headers.get('authorization');
