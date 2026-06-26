@@ -13,7 +13,7 @@ import { authenticateRequest } from './authenticate';
 import { classifyPromptMode } from './classify';
 import { executeOptimization } from './execute';
 
-const GEMINI_API_KEY = requireEnv('GEMINI_API_KEY');
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_API_KEY_PREMIUM = process.env.GEMINI_API_KEY_PREMIUM;
 
 export const POST = withMetrics(async (request: Request) => {
