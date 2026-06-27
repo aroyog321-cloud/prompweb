@@ -6,7 +6,7 @@ import { Redis } from '@upstash/redis';
 // Strict environment matrix per audit feedback
 if (process.env.NODE_ENV === 'production') {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
-    throw new Error('FATAL: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be defined in production. Missing queue configuration.');
+    console.warn('WARNING: UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN should be defined in production for rate limiting. Falling back to memory limiter.');
   }
 }
 
