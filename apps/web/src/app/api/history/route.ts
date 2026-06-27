@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireEnv } from '@/lib/env';
@@ -50,7 +52,9 @@ export async function GET(request: Request) {
 
     if (historyError) throw historyError;
 
-    return NextResponse.json(history || []);
+    const res = NextResponse.json(history || []);
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
   } catch (error) {
     console.error("GET /api/history error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

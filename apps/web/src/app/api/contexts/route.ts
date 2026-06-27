@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -115,7 +117,9 @@ export async function GET(request: Request) {
       websiteUrl: p.websiteURL, // Map Prisma schema to frontend expected
     }));
 
-    return NextResponse.json(mappedProfiles);
+    const res = NextResponse.json(mappedProfiles);
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    return res;
   } catch (error) {
     console.error("GET /api/contexts error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

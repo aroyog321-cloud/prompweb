@@ -48,7 +48,7 @@ export default function HistoryPage() {
   const [activeMenu, setActiveMenu] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
   // Debounce search
   useEffect(() => {
@@ -62,8 +62,28 @@ export default function HistoryPage() {
       if (!session) { window.location.href = '/login'; return }
       setToken(session.access_token)
       setUser(session.user)
+
+      // Live updates: re-fetch when a new history row is inserted
+      const channel = supabase
+        .channel('prompt-history-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'PromptHistory',
+            filter: `userId=eq.${session.user.id}`,
+          },
+          () => {
+            setPage(0)
+            fetchHistory()
+          }
+        )
+        .subscribe()
+
+      return () => { supabase.removeChannel(channel) }
     })
-  }, [supabase.auth])
+  }, [fetchHistory, supabase])
 
   // Fetch
   const fetchHistory = useCallback(async () => {

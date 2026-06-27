@@ -26,7 +26,7 @@ export const Popup: React.FC = () => {
             const planData = { tier: data.tier, total_requests_today: data.total_requests_today };
             setApiPlanData(planData);
             chrome.storage.local.set({ 
-              apiPlanCache: { data: planData, expiresAt: now + 5 * 60 * 1000 } 
+              apiPlanCache: { data: planData, expiresAt: now + 60 * 1000 } 
             });
             if (data.contextProfile) {
               const currentCtx = s.contextProfile || {};
@@ -50,13 +50,31 @@ export const Popup: React.FC = () => {
 
     const onMessage = (msg: any) => {
       if (msg?.type === "PROMPTLY_PLAN_UPDATED") {
+        chrome.storage.local.remove(['apiPlanCache'], () => {
+          getSettings().then(s => {
+            if (s?.accessToken && s?.apiBaseUrl) fetchMe(s);
+          });
+        });
+      }
+    };
+    chrome.runtime.onMessage.addListener(onMessage);
+
+    const onStorageChanged = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string
+    ) => {
+      if (area === 'local' && 'apiPlanCache' in changes && !changes.apiPlanCache.newValue) {
         getSettings().then(s => {
           if (s?.accessToken && s?.apiBaseUrl) fetchMe(s);
         });
       }
     };
-    chrome.runtime.onMessage.addListener(onMessage);
-    return () => chrome.runtime.onMessage.removeListener(onMessage);
+    chrome.storage.onChanged.addListener(onStorageChanged);
+
+    return () => {
+      chrome.runtime.onMessage.removeListener(onMessage);
+      chrome.storage.onChanged.removeListener(onStorageChanged);
+    };
   }, []);
 
   const update = async (partial: Partial<PromptlySettings>) => {
