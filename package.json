@@ -9,5 +9,8 @@
   ],
   "overrides": {
     "lightningcss": "1.32.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
   }
 }

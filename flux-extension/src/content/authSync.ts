@@ -112,7 +112,18 @@ window.addEventListener("message", async (event) => {
     }
     seenNonces.set(data.nonce, Date.now());
     
-    await saveToken(data.token, data.refreshToken, data.supabaseUrl, data.supabaseAnonKey, window.location.origin);
+    try {
+      const response = await fetch(`${window.location.origin}/api/me`, {
+        headers: { Authorization: `Bearer ${data.token}` }
+      });
+      if (!response.ok) {
+        console.warn("[Promptly] Token validation failed, ignoring token.");
+        return;
+      }
+      await saveToken(data.token, data.refreshToken, data.supabaseUrl, data.supabaseAnonKey, window.location.origin);
+    } catch (e) {
+      console.warn("[Promptly] Token validation network error", e);
+    }
   } else if (data.type === "PROMPTLY_LOGOUT") {
     try {
       if (!chrome.runtime?.id) return;

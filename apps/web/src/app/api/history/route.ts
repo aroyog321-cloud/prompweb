@@ -95,9 +95,9 @@ export async function POST(request: Request) {
       // FIX #2: Map to proper new enum values, matching the updated SQL migration
       BASIC: "BASIC",
       PROFESSIONAL: "PROFESSIONAL",
-      "STAFF+": "STAFF_PLUS",
+      "STAFF+": "STAFF+",
       RESEARCH: "RESEARCH",
-      "PRODUCTION AUDIT": "PRODUCTION_AUDIT"
+      "PRODUCTION AUDIT": "PRODUCTION AUDIT"
     };
 
     const rawMode = (body.promptMode || body.mode || "").toString().replace(/-/g, "_").toUpperCase();

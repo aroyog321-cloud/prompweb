@@ -124,7 +124,7 @@ export const POST = withMetrics(async (request: Request) => {
         const rawLevel = body.level?.toUpperCase() ?? 'MEDIUM';
         const LEVEL_MAP: Record<string, string> = {
           'LIGHT': 'LIGHT', 'MEDIUM': 'MEDIUM', 'AGGRESSIVE': 'AGGRESSIVE', 'EXPERT': 'EXPERT',
-          'BASIC': 'BASIC', 'PROFESSIONAL': 'PROFESSIONAL', 'STAFF+': 'STAFF_PLUS', 'RESEARCH': 'RESEARCH', 'PRODUCTION AUDIT': 'PRODUCTION_AUDIT'
+          'BASIC': 'BASIC', 'PROFESSIONAL': 'PROFESSIONAL', 'STAFF+': 'STAFF+', 'RESEARCH': 'RESEARCH', 'PRODUCTION AUDIT': 'PRODUCTION AUDIT'
         };
         const mappedLevel = LEVEL_MAP[rawLevel] || 'MEDIUM';
         
