@@ -1,4 +1,5 @@
 -- 1. Create the atomic increment_usage RPC
+DROP FUNCTION IF EXISTS increment_usage(uuid, boolean, boolean);
 DROP FUNCTION IF EXISTS increment_usage(uuid, boolean);
 DROP FUNCTION IF EXISTS increment_usage(text, boolean);
 
