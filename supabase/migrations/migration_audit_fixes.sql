@@ -41,14 +41,18 @@ BEGIN
   IF p_is_regen THEN
     v_allowed := COALESCE(v_row.regenerations_today, 0) < v_limit_regen;
     IF v_allowed THEN
-      UPDATE usage_stats SET regenerations_today = COALESCE(v_row.regenerations_today, 0) + 1 WHERE id = p_user_id::uuid;
-      v_row.regenerations_today := COALESCE(v_row.regenerations_today, 0) + 1;
+      UPDATE usage_stats 
+      SET regenerations_today = COALESCE(usage_stats.regenerations_today, 0) + 1 
+      WHERE id = p_user_id::uuid
+      RETURNING usage_stats.regenerations_today INTO v_row.regenerations_today;
     END IF;
   ELSE
     v_allowed := COALESCE(v_row.total_requests_today, 0) < v_limit_total;
     IF v_allowed THEN
-      UPDATE usage_stats SET total_requests_today = COALESCE(v_row.total_requests_today, 0) + 1 WHERE id = p_user_id::uuid;
-      v_row.total_requests_today := COALESCE(v_row.total_requests_today, 0) + 1;
+      UPDATE usage_stats 
+      SET total_requests_today = COALESCE(usage_stats.total_requests_today, 0) + 1 
+      WHERE id = p_user_id::uuid
+      RETURNING usage_stats.total_requests_today INTO v_row.total_requests_today;
     END IF;
   END IF;
 
