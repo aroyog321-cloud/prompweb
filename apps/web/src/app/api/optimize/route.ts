@@ -165,6 +165,15 @@ export const POST = withMetrics(async (request: Request) => {
       return NextResponse.json({ error: "request_timeout" }, { status: 504 });
     }
 
+    if (isError && error.message.includes("Rate limit")) {
+      return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    }
+
+    // Pass through upstream API errors directly instead of masking as 500
+    if (isError && error.message.includes("Gemini API error")) {
+       return NextResponse.json({ error: error.message }, { status: 502 });
+    }
+
     captureError(isError ? error : new Error(String(error)), { route: '/api/optimize', duration, provider: 'gemini' });
 
     return NextResponse.json(

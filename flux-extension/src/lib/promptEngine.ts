@@ -313,10 +313,11 @@ ${draftText}`;
         
         // Handle streaming path via background port connection
         if (req.stream && options?.onChunk) {
-          return new Promise<OptimizeResponse>((resolve, reject) => {
+          const streamPromise = new Promise<OptimizeResponse>((resolve, reject) => {
             const port = chrome.runtime.connect({ name: "promptly-stream-proxy" });
             let fullText = "";
             let sseBuffer = "";
+            let hasChunks = false;
             
             port.postMessage({
               type: "START_STREAM",
@@ -330,6 +331,7 @@ ${draftText}`;
             
             port.onMessage.addListener(async (msg) => {
               if (msg.type === "CHUNK") {
+                hasChunks = true;
                 const chunk = msg.chunk;
                 sseBuffer += chunk;
                 const lines = sseBuffer.split('\n');
@@ -344,7 +346,7 @@ ${draftText}`;
                       if (data.choices && data.choices[0]?.delta?.content) {
                         const delta = data.choices[0].delta.content;
                         fullText += delta;
-                        options.onChunk(delta);
+                        options?.onChunk?.(delta);
                       }
                     } catch (e) {}
                   }
@@ -372,11 +374,17 @@ ${draftText}`;
                   }
                   reject(new Error(`401: ${msg.error}`));
                 } else {
-                  reject(new Error(msg.error || "Streaming failed"));
+                  if (hasChunks) {
+                    // Stream failed halfway through, return partial result
+                    resolve({ optimized: fullText.trim(), source: "api", degraded: true, degradedReason: msg.error });
+                  } else {
+                    reject(new Error(msg.error || "Streaming failed"));
+                  }
                 }
               }
             });
           });
+          return await streamPromise;
         }
 
         // Handle non-streaming path via bgFetch with exponential backoff
