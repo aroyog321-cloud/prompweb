@@ -1,11 +1,15 @@
 -- 1. Create the atomic increment_usage RPC
+DROP FUNCTION IF EXISTS increment_usage(uuid, boolean);
+DROP FUNCTION IF EXISTS increment_usage(text, boolean);
+
 CREATE OR REPLACE FUNCTION increment_usage(
-  p_user_id TEXT,
+  p_user_id UUID,
   p_is_regen BOOLEAN DEFAULT FALSE
 )
 RETURNS TABLE(allowed BOOLEAN, tier TEXT, total_requests_today INT, regenerations_today INT)
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_row usage_stats;
@@ -14,21 +18,21 @@ DECLARE
   v_allowed BOOLEAN := FALSE;
 BEGIN
   -- Atomic lock on the user's usage row
-  SELECT * INTO v_row FROM usage_stats WHERE id = p_user_id::uuid FOR UPDATE;
+  SELECT * INTO v_row FROM usage_stats WHERE id = p_user_id FOR UPDATE;
 
   -- Bootstrap row if missing
   IF NOT FOUND THEN
     INSERT INTO usage_stats (id, tier, total_requests_today, regenerations_today, last_reset_date)
-    VALUES (p_user_id::uuid, 'free', 0, 0, CURRENT_DATE)
+    VALUES (p_user_id, 'free', 0, 0, CURRENT_DATE)
     ON CONFLICT (id) DO NOTHING;
-    SELECT * INTO v_row FROM usage_stats WHERE id = p_user_id::uuid FOR UPDATE;
+    SELECT * INTO v_row FROM usage_stats WHERE id = p_user_id FOR UPDATE;
   END IF;
 
   -- Reset counters if new day
   IF v_row.last_reset_date < CURRENT_DATE THEN
     UPDATE usage_stats
     SET total_requests_today = 0, regenerations_today = 0, last_reset_date = CURRENT_DATE
-    WHERE id = p_user_id::uuid;
+    WHERE id = p_user_id;
     v_row.total_requests_today := 0;
     v_row.regenerations_today := 0;
   END IF;
@@ -43,7 +47,7 @@ BEGIN
     IF v_allowed THEN
       UPDATE usage_stats 
       SET regenerations_today = COALESCE(usage_stats.regenerations_today, 0) + 1 
-      WHERE id = p_user_id::uuid
+      WHERE id = p_user_id
       RETURNING usage_stats.regenerations_today INTO v_row.regenerations_today;
     END IF;
   ELSE
@@ -51,7 +55,7 @@ BEGIN
     IF v_allowed THEN
       UPDATE usage_stats 
       SET total_requests_today = COALESCE(usage_stats.total_requests_today, 0) + 1 
-      WHERE id = p_user_id::uuid
+      WHERE id = p_user_id
       RETURNING usage_stats.total_requests_today INTO v_row.total_requests_today;
     END IF;
   END IF;
