@@ -171,7 +171,9 @@ export const POST = withMetrics(async (request: Request) => {
 
     // Pass through upstream API errors directly instead of masking as 500
     if (isError && error.message.includes("Gemini API error")) {
-       return NextResponse.json({ error: error.message }, { status: 502 });
+       const statusMatch = error.message.match(/Gemini API error: (\d+)/);
+       const statusCode = statusMatch ? parseInt(statusMatch[1], 10) : 502;
+       return NextResponse.json({ error: error.message }, { status: statusCode });
     }
 
     captureError(isError ? error : new Error(String(error)), { route: '/api/optimize', duration, provider: 'gemini' });

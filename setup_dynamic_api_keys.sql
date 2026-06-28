@@ -9,14 +9,14 @@ CREATE TABLE IF NOT EXISTS public."ApiKey" (
     name TEXT NOT NULL UNIQUE,
     secret TEXT NOT NULL,
     enabled BOOLEAN NOT NULL DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 2. Ensure the SystemSetting table exists
 CREATE TABLE IF NOT EXISTS public."SystemSetting" (
     key TEXT PRIMARY KEY,
     value TEXT,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 3. Insert your Gemini API Key into the ApiKey table
@@ -30,6 +30,6 @@ SET secret = EXCLUDED.secret, enabled = EXCLUDED.enabled;
 INSERT INTO public."SystemSetting" (key, value)
 VALUES ('optimize_key', 'gemini_production_key')
 ON CONFLICT (key) DO UPDATE 
-SET value = EXCLUDED.value, updated_at = NOW();
+SET value = EXCLUDED.value, "updatedAt" = NOW();
 
 -- Now, your Next.js app will fetch this key dynamically!
