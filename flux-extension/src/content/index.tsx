@@ -301,13 +301,7 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
     setOrbLoading(true);
 
     try {
-      // Default to "Staff+" for double-click to ensure high-quality prompt synthesis
-      // without needing the full panel.
-      const level = settings.defaultLevel === "Production Audit" 
-        ? "Production Audit" 
-        : settings.defaultLevel === "Research"
-          ? "Research"
-          : "Staff+";
+      const level = settings.defaultLevel;
 
       if (!isRegenerating && settings.defaultMode === "auto") {
         showToast("Auto-detecting mode...", "info");
