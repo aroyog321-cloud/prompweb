@@ -51,17 +51,15 @@ export const POST = withMetrics(async (request: Request) => {
 
     // Parallelize independent remote calls
     const billingPromise = checkQuotaAndTier(supabaseAdmin, user.id, isRegeneration, hasContextMemory);
-    const apiKeyPromise = getDynamicApiKey(supabaseAdmin, GEMINI_API_KEY || '');
-    let classifyPromise: Promise<string | null> | null = null;
+    const dynamicApiKey = await getDynamicApiKey(supabaseAdmin, GEMINI_API_KEY || '');
     
+    let classifyPromise: Promise<string | null> | null = null;
     if (body.mode === "auto") {
-      // Use fallback key for classification to parallelize
-      classifyPromise = classifyPromptMode(body.text, GEMINI_API_KEY || '');
+      classifyPromise = classifyPromptMode(body.text, dynamicApiKey || GEMINI_API_KEY || '');
     }
 
-    const [billingResult, dynamicApiKey, classifiedMode] = await Promise.all([
+    const [billingResult, classifiedMode] = await Promise.all([
       billingPromise,
-      apiKeyPromise,
       classifyPromise
     ]);
 
