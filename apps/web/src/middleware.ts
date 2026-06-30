@@ -103,17 +103,21 @@ export default async function proxy(request: NextRequest) {
     const authHeader = request.headers.get('authorization') ?? '';
     const jwtPayload = tryDecodeJwtSub(authHeader);
     if (jwtPayload) {
-      const userRatelimit = new Ratelimit({
-        redis: Redis.fromEnv(),
-        limiter: Ratelimit.slidingWindow(60, '1 m'),
-        prefix: 'rl:user',
-      });
-      const { success: userOk } = await userRatelimit.limit(jwtPayload);
-      if (!userOk) {
-        return new NextResponse(JSON.stringify({ error: 'Rate limit exceeded' }), {
-          status: 429,
-          headers: { 'Content-Type': 'application/json' },
+      try {
+        const userRatelimit = new Ratelimit({
+          redis: Redis.fromEnv(),
+          limiter: Ratelimit.slidingWindow(60, '1 m'),
+          prefix: 'rl:user',
         });
+        const { success: userOk } = await userRatelimit.limit(jwtPayload);
+        if (!userOk) {
+          return new NextResponse(JSON.stringify({ error: 'Rate limit exceeded' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      } catch (e) {
+        console.warn('Upstash user rate limit error, bypassing', e);
       }
     }
   }
