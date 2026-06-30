@@ -324,10 +324,20 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
     setOrbLoading(true);
 
     try {
-      const level = settings.defaultLevel;
+      // Always read fresh settings from storage so the double-click
+      // uses whatever mode/level the user last picked in the panel,
+      // not a potentially stale in-memory snapshot.
+      const freshSettings = await getSettings();
+      const activeSettings = freshSettings || settings;
 
-      if (!isRegenerating && settings.defaultMode === "auto") {
+      const mode = activeSettings.defaultMode || "auto";
+      const level = activeSettings.defaultLevel;
+      const style = activeSettings.defaultStyle || "neutral";
+
+      if (!isRegenerating && mode === "auto") {
         showToast("Auto-detecting mode...", "info");
+      } else if (!isRegenerating) {
+        showToast(`Optimizing in ${mode} mode...`, "info");
       }
 
       const result = await optimizePrompt({
@@ -338,18 +348,18 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
               refinement: "Produce a structurally different rewrite. Use a different section ordering, a different opening framing, and avoid reusing the exact phrasing or headings from the previous version. Keep the same intent." 
             }
           : {}),
-        mode: settings.defaultMode || "auto",
+        mode,
         level,
-        style: settings.defaultStyle || "neutral",
-        context: settings.contextInjectionEnabled ? settings.contextProfile : undefined,
+        style,
+        context: activeSettings.contextInjectionEnabled ? activeSettings.contextProfile : undefined,
         stream: false,
         platform: window.location.hostname
       }, {
-        apiBaseUrl: settings.apiBaseUrl,
-        apiKey: settings.apiKey,
-        categorizerApiUrl: settings.categorizerApiUrl,
-        categorizerApiKey: settings.categorizerApiKey,
-        accessToken: settings.accessToken
+        apiBaseUrl: activeSettings.apiBaseUrl,
+        apiKey: activeSettings.apiKey,
+        categorizerApiUrl: activeSettings.categorizerApiUrl,
+        categorizerApiKey: activeSettings.categorizerApiKey,
+        accessToken: activeSettings.accessToken
       });
 
       if (result.degraded) {
@@ -364,15 +374,14 @@ const PromptlyApp: React.FC<{ platform: PlatformConfig }> = ({ platform }) => {
 
       writeInputText(input, finalOutput);
 
-
       history.add({
         text: textToOptimize,
         optimized: result.optimized,
-        mode: "auto",
+        mode,   // use the actual mode, not hardcoded "auto"
         level,
         platform: window.location.hostname,
         source: result.source as any
-      }, { accessToken: settings.accessToken, apiBaseUrl: settings.apiBaseUrl });
+      }, { accessToken: activeSettings.accessToken, apiBaseUrl: activeSettings.apiBaseUrl });
 
       lastAutoRef.current = { original: textToOptimize, optimized: result.optimized };
 
