@@ -1,4 +1,4 @@
-import { OptimizeRequest } from '@promptly/types';
+import { OptimizeRequest, RewriteLevel } from '@promptly/types';
 
 // These sets mirror PROMPT_MODES and REWRITE_LEVELS in @promptly/types exactly.
 // If you add a new mode/level to the types, add it here too.
