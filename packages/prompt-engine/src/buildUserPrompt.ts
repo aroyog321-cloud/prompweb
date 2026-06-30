@@ -1,9 +1,12 @@
 import { OptimizeRequest } from "@promptly/types";
+import { STYLE_GUIDELINES } from "./modeRecipes";
+import { LEVEL_CONFIGS } from "./levelConfigs";
 import { contextLine, stripPoliteness } from "./utils";
 
 export function buildUserPrompt(req: OptimizeRequest): string {
-  const { text, context, refinement, previousPrompt } = req;
+  const { text, level, style, context, refinement, previousPrompt } = req;
   const rawText = stripPoliteness(text.trim());
+  const levelConfig = LEVEL_CONFIGS[level];
 
   // ── REFINEMENT FLOW ────────────────────────────────────────────────────────
   if (previousPrompt) {
@@ -21,18 +24,37 @@ ${previousPrompt}
 ${refinement}
 </user_feedback>
 
-Apply the feedback to improve the current prompt. Output only the revised prompt using the same format (Act as... Requirements... Output...). Then add the footer: "---\\nPrompt Strength: [X]/10 → [Y]/10"
+Apply the feedback to improve the current prompt. Output only the revised prompt. Then add the footer: "---\\nPrompt Strength: [X]/10 → [Y]/10"
 `;
   }
 
   // ── STANDARD FLOW ─────────────────────────────────────────────────────────
-  let userPrompt = `Convert this into a prompt: "${rawText}"`;
+  const styleGuideline = STYLE_GUIDELINES[style] || style;
+  
+  // Word limits based on intensity
+  const limits: Record<string, string> = {
+    "Basic": "under 100 words",
+    "Professional": "150-250 words",
+    "Staff+": "250-400 words",
+    "Research": "350-500 words",
+    "Production Audit": "500-700 words"
+  };
+  const wordLimit = limits[level] || "150-250 words";
 
-  // Context memory — preserved if enabled by the user
+  let userPrompt = `Intensity level: ${level}
+Style of the prompt: ${styleGuideline}
+Prompt generation limit of text: ${wordLimit}
+`;
+
+  // Context memory
   const contextBlock = context ? contextLine(context) : "";
   if (contextBlock) {
-    userPrompt += `\n\nUSER CONTEXT PROFILE (MUST be woven into the generated prompt):\n${contextBlock}\nAt least 2 requirements in the generated prompt must directly reference this context.`;
+    userPrompt += `Context memory: ${contextBlock}\n\n`;
+  } else {
+    userPrompt += `\n`;
   }
+
+  userPrompt += `Generate a prompt of this: "${rawText}" create this into a good prompt.`;
 
   return userPrompt;
 }
