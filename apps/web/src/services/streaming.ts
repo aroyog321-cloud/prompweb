@@ -10,7 +10,6 @@ interface StreamContext {
   };
   platform: string;
   supabase: SupabaseClient;
-  clientWillSync?: boolean;
 }
 
 // Single source of truth for level → DB enum value mapping.
@@ -100,7 +99,7 @@ export function createOpenAIStream(response: Response, context?: StreamContext) 
     },
 
     async flush() {
-      if (!context || !accumulatedText.trim() || context.clientWillSync) return;
+      if (!context || !accumulatedText.trim()) return;
 
       const responseTime = (Date.now() - startTime) / 1000;
       const dbLevel = toDbLevel(context.body.level);
@@ -117,6 +116,7 @@ export function createOpenAIStream(response: Response, context?: StreamContext) 
 
       try {
         const { error } = await context.supabase.from('PromptHistory').insert([{
+          id:               crypto.randomUUID(),
           userId:           context.user.id,
           originalPrompt:  context.body.text,
           optimizedPrompt: cleanText,

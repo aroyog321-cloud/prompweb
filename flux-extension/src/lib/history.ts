@@ -289,34 +289,24 @@ export const useHistory = create<HistoryState>((set, get) => ({
       const apiBaseUrl = auth?.apiBaseUrl || settings.apiBaseUrl;
       const accessToken = auth?.accessToken || settings.accessToken;
 
-      if (apiBaseUrl && accessToken) {
-        if (entry.source === "api") {
-          // Optimization happened on the server; the server already saved it to the DB.
-          // Nothing to do.
-        } else {
-          // Token available and it's a local optimization — POST immediately
-          const { ok, serverId } = await postEntryToServer(entry, {
-            accessToken,
-            apiBaseUrl,
-          });
-          if (ok && serverId) {
-            const updated = get().entries.map((e) =>
-              e.id === entry.id ? { ...e, id: serverId } : e
-            );
-            set({ entries: updated });
-            await writeStorage(updated);
-          } else if (!ok) {
-            // POST failed despite having a token (network hiccup, server error).
-            // Queue it for retry on next hydration/token refresh.
-            await addToPendingQueue(entry);
-          }
+      // The server saves to PromptHistory for api-source entries.
+      // For local-fallback entries, POST to /api/history so they also appear on the website.
+      if (entry.source !== "api" && apiBaseUrl && accessToken) {
+        const { ok, serverId } = await postEntryToServer(entry, {
+          accessToken,
+          apiBaseUrl,
+        });
+        if (ok && serverId) {
+          const updated = get().entries.map((e) =>
+            e.id === entry.id ? { ...e, id: serverId } : e
+          );
+          set({ entries: updated });
+          await writeStorage(updated);
+        } else if (!ok) {
+          await addToPendingQueue(entry);
         }
-      } else {
-        // No token yet — queue so we can retry once the user visits the website
-        // and AuthSyncComponent delivers the token to the extension.
-        console.log(
-          "[Promptly] No access token — queuing entry for later server sync."
-        );
+      } else if (entry.source !== "api") {
+        console.log("[Promptly] No access token — queuing entry for later server sync.");
         await addToPendingQueue(entry);
       }
     } catch (e) {

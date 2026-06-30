@@ -103,8 +103,9 @@ export const POST = withMetrics(async (request: Request) => {
     );
 
     if (body.stream) {
-      // Pass supabaseAdmin instead of supabaseUserClient
-      return createOpenAIStream(finalRes, { user, body, platform: platform || "api", supabase: supabaseAdmin, clientWillSync: body.clientWillSync });
+      // Pass the classified resolvedMode (not raw body.mode which is always 'auto')
+      const streamBody = { ...body, mode: resolvedMode as string };
+      return createOpenAIStream(finalRes, { user, body: streamBody, platform: platform || "api", supabase: supabaseAdmin });
     } else {
       const finalData = await finalRes.json();
       const optimizedText = finalData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
@@ -144,12 +145,12 @@ export const POST = withMetrics(async (request: Request) => {
         }]).throwOnError();
       };
 
-      if (!body.clientWillSync) {
-        try {
-          await saveHistory();
-        } catch (err) {
-          console.error('[Promptly] PromptHistory insert failed:', err instanceof Error ? err.message : err);
-        }
+      // Always save — extension no longer sends clientWillSync:true
+      try {
+        await saveHistory();
+      } catch (err) {
+        // Non-fatal: log but still return the optimized result to the user
+        console.error('[Promptly] PromptHistory insert failed:', err instanceof Error ? err.message : err);
       }
 
       return NextResponse.json<OptimizeResponse>({
