@@ -1,90 +1,129 @@
 import { PromptMode, RewriteLevel } from "@promptly/types";
 
-// Word limits based on intensity
-const LIMITS: Record<RewriteLevel, string> = {
-  "Basic": "under 100 words",
-  "Professional": "150–250 words",
-  "Staff+": "ABSOLUTE MINIMUM 250 words, up to 400 words. You MUST aggressively expand on the user's premise.",
-  "Research": "ABSOLUTE MINIMUM 350 words, up to 500 words. You MUST aggressively expand on the user's premise.",
-  "Production Audit": "ABSOLUTE MINIMUM 500 words, up to 700 words. You MUST aggressively expand on the user's premise."
+// Strict word count targets per intensity level
+const LIMITS: Record<RewriteLevel, { min: number; max: number; label: string }> = {
+  "Basic":            { min: 40,  max: 100,  label: "40–100 words (short and clean)" },
+  "Professional":     { min: 150, max: 280,  label: "150–280 words (structured and complete)" },
+  "Staff+":           { min: 300, max: 500,  label: "300–500 words (comprehensive and expert-grade)" },
+  "Research":         { min: 450, max: 700,  label: "450–700 words (deep, rigorous, and exhaustive)" },
+  "Production Audit": { min: 600, max: 900,  label: "600–900 words (maximum depth and precision)" },
+};
+
+// Required structural sections per intensity level (forces length and completeness)
+const REQUIRED_SECTIONS: Record<RewriteLevel, string> = {
+  "Basic": ``,
+
+  "Professional": `Required structure:
+- Clear objective statement
+- Specific instructions or constraints
+- Expected output format`,
+
+  "Staff+": `Required structure — you MUST include ALL of the following sections:
+1. # Role & Expertise — Assign a world-class expert persona with specific credentials
+2. # Objective — State the exact goal with full context and background
+3. # Key Requirements & Constraints — List at least 5 specific, non-trivial constraints
+4. # Context & Assumptions — Define background information and edge cases
+5. # Output Format & Structure — Specify exact format, length, sections, or schema
+6. # Step-by-Step Reasoning — Require the AI to think through the problem before answering
+7. # Success Criteria — Define what a perfect response looks like`,
+
+  "Research": `Required structure — you MUST include ALL of the following sections:
+1. # Role & Academic Authority — Assign a precise research expert or academic persona
+2. # Research Objective — State the question, hypothesis, or inquiry with full scope
+3. # Methodology — Define the research approach, frameworks, and analytical methods to use
+4. # Evidence Requirements — Specify what sources, data, or citations are required
+5. # Sub-Questions — Break the objective into at least 5 numbered analytical sub-questions
+6. # Assumptions & Uncertainty — Require the AI to flag all assumptions and knowledge gaps
+7. # Output Format — Define structure: headings, tables, citation style, length
+8. # Quality Standards — Specify peer-review or academic-grade accuracy requirements`,
+
+  "Production Audit": `Required structure — you MUST include ALL of the following sections:
+1. # Role & Authority — Assign a senior expert auditor, principal engineer, or chief analyst persona
+2. # Audit Objective — Define exactly what is being audited and the success benchmark
+3. # Scope & Boundaries — Define precisely what is in and out of scope
+4. # Audit Criteria & Checklist — List at least 8 specific evaluation criteria with scoring guidance
+5. # Edge Cases & Failure Modes — Enumerate known risks, anti-patterns, and failure scenarios
+6. # Evidence & Verification — Define what proof or output is required for each criterion
+7. # Scoring Rubric — Define a grading scale (e.g., 1–10) for each criterion
+8. # Self-Check Step — Require the AI to critique its own output before finalising
+9. # Deliverable Format — Define the exact structure of the final audit report
+10. # Success Definition — State what a perfect audit looks like and what score equals passing`,
 };
 
 const INTENSITY_RULES: Record<RewriteLevel, string> = {
   "Basic": `Basic Optimization Rules:
-* Perform grammar cleanup and formatting improvements.
-* Preserve the user's original wording and intent as much as possible.
-* Do not introduce new personas, roles, or complex frameworks.
-* Keep the prompt extremely simple and direct.`,
+* Perform grammar cleanup and light formatting improvements only.
+* Preserve the user's exact wording and intent — do NOT expand or restructure.
+* Do NOT introduce personas, roles, frameworks, or new content.
+* Keep the result extremely simple, direct, and short.`,
 
   "Professional": `Professional Optimization Rules:
 * Convert the request into a structured, business-grade prompt.
-* Define the objective clearly.
-* Organize instructions into logical sections.
-* Include expected output characteristics where beneficial.
-* Add concise requirements and success expectations.
-* Avoid excessive frameworks or unnecessary complexity.`,
+* Define the objective clearly in a single sentence.
+* Organize instructions into logical sections with clear headings.
+* Include expected output format and quality characteristics.
+* Add concise requirements — avoid over-engineering.`,
 
   "Staff+": `Staff+ Optimization Rules:
-* Restructure the request into a highly optimized, context-rich mega-prompt.
-* Assign a specific, world-class expert role or persona to the AI.
-* Dramatically expand the prompt by defining critical context, background assumptions, and edge cases.
-* Define strict, multi-faceted constraints, output formats, and structural requirements.
-* Require deep step-by-step reasoning (Chain of Thought) before the final answer.
-* The output MUST be significantly longer and more detailed than the original request.`,
+* Restructure the request into a comprehensive, expert-level mega-prompt.
+* Assign a specific world-class expert role with domain credentials (e.g., "You are a Senior Principal Engineer at Google with 15 years of distributed systems experience").
+* DRAMATICALLY EXPAND the prompt — infer all necessary context, background, assumptions, and constraints that a professional would need.
+* Define strict, multi-faceted output requirements: format, structure, length, tone.
+* Require step-by-step Chain of Thought reasoning BEFORE delivering the final answer.
+* Add edge cases, failure conditions, and quality gates.
+* The final output MUST be a high-signal, expert-grade prompt — NOT a simple instruction.`,
 
   "Research": `Research Optimization Rules:
-* Rebuild the prompt for academic or deep analytical rigor, creating a comprehensive research brief.
-* Define specific methodology, evidence/source requirements, and analytical frameworks.
-* Break the task into numbered sub-steps for systematic, multi-disciplinary analysis.
-* Require the AI to actively flag assumptions, biases, and uncertainty.
-* Enforce strict formatting and data presentation rules (e.g., tables, citations).
-* Exhaustively expand on the topic to ensure no nuance is missed.`,
+* Rebuild the request into a comprehensive academic/analytical research brief.
+* Define a precise research question, scope, and methodology.
+* Break the task into at least 5 numbered analytical sub-questions.
+* Specify required evidence types (empirical data, peer-reviewed sources, etc.).
+* Require the AI to explicitly flag assumptions, limitations, and biases.
+* Enforce strict academic formatting: structured headings, citation placeholders, data tables where applicable.
+* The prompt must be thorough enough to guide a PhD-level analysis.`,
 
   "Production Audit": `Production Audit Optimization Rules:
-* Reconstruct the prompt into an exhaustive, expert-level auditing framework of maximum length and rigor.
-* Assign a precise role (e.g., Principal Engineer, Chief Auditor, Senior Legal Counsel).
-* Define exhaustive success criteria, edge cases, failure modes, and anti-patterns to avoid.
-* Include a mandatory self-check, scoring rubric, and critique step.
-* Ensure maximum constraint enforcement. The prompt must be extremely thorough and highly engineered.`
+* Reconstruct the request into a rigorous, exhaustive auditing framework.
+* Assign an authoritative senior auditor or expert role with specific domain authority.
+* Define exhaustive success criteria, evaluation dimensions, and scoring rubrics.
+* List all edge cases, anti-patterns, failure modes, and known pitfalls.
+* Require mandatory self-critique and revision steps before final output.
+* The prompt must be the most thorough, engineered, and detailed version possible.
+* No constraint should be left implicit — everything must be specified explicitly.`,
 };
 
 const STYLE_RULES: Record<string, string> = {
-  "Direct": `Direct Style Rules:
-* Make the prompt concise and action-first.
-* Remove all fluff, politeness, and conversational phrasing.
-* Use imperative verbs and strict instructions.`,
+  "Direct": `Style — Direct:
+* Make the prompt action-first and imperative.
+* Remove all politeness, filler, or conversational softening.
+* Every sentence must serve a clear functional purpose.
+* Use strong verbs: "Define", "List", "Specify", "Provide", "Ensure".`,
 
-  "Formal": `Formal Style Rules:
-* Use professional and polished language.
-* Maintain neutral and authoritative wording.
-* Avoid conversational phrasing.
-* Prefer clarity and precision over creativity.`,
+  "Formal": `Style — Formal:
+* Use professional, authoritative, and polished language throughout.
+* Maintain neutral, precise wording — no contractions, no slang.
+* Prefer institutional-grade phrasing appropriate for executive or legal audiences.`,
 
-  "Conversational": `Conversational Style Rules:
-* Use friendly, approachable, and natural language.
-* Avoid overly formal or stiff phrasing.
-* Allow for light, human-sounding instructions.`,
+  "Conversational": `Style — Conversational:
+* Use friendly, approachable, natural language — as if briefing a trusted colleague.
+* Avoid stiff or bureaucratic phrasing.
+* Human-sounding instructions are preferred, but precision must not be sacrificed.`,
 
-  "Academic": `Academic Style Rules:
-* Use scholarly, rigorous, and precise language.
-* Structure the prompt with clearly defined terms and references.
-* Require evidence-based, citation-worthy answers where applicable.`,
+  "Academic": `Style — Academic:
+* Use scholarly, technically precise, and rigorous language.
+* Define key terms explicitly where ambiguity is possible.
+* Prefer passive constructions and evidence-based framing where appropriate.`,
 
-  "Creative": `Creative Style Rules:
-* Use expressive, imaginative, and engaging language.
-* Encourage the AI to think outside the box and take creative risks.
-* Prioritize resonance, metaphor, and sensory language.`,
+  "Creative": `Style — Creative:
+* Use expressive, vivid, and imaginative language.
+* Allow for metaphor, sensory detail, and narrative framing where it enhances clarity.
+* Encourage the AI to approach the task with originality and conceptual depth.`,
 
-  "Analytical": `Analytical Style Rules:
-* Focus strictly on stepwise reasoning and logical deduction.
-* Use precise, specification-driven language.
-* Prioritize objective analysis and metric-based evaluation.`,
-
-  "Neutral": `Neutral Style Rules:
-* Maintain a balanced, objective tone.
-* Focus purely on clarity and instructional accuracy.`
+  "Neutral": `Style — Neutral:
+* Maintain a balanced, clear, and objective tone.
+* Focus on instructional accuracy and logical flow.
+* NOTE: Neutral style does NOT mean short — it means unbiased and clear. Full length must still be respected.`,
 };
-
 
 
 export async function buildSystemPrompt(
@@ -95,8 +134,9 @@ export async function buildSystemPrompt(
   contextText?: string
 ): Promise<string> {
 
-  const wordLimit = LIMITS[level] || LIMITS["Professional"];
+  const limit = LIMITS[level] || LIMITS["Professional"];
   const intensityRules = INTENSITY_RULES[level] || INTENSITY_RULES["Professional"];
+  const requiredSections = REQUIRED_SECTIONS[level] || "";
 
   // Match style case-insensitively (PROMPT_STYLES values are lowercase e.g. "formal")
   const safeStyle = style || "Neutral";
@@ -107,36 +147,50 @@ export async function buildSystemPrompt(
 
   const contextStr = contextText?.trim() || "None";
 
+  const isHighIntensity = !["Basic", "Professional"].includes(level);
+
   return `You are an elite Prompt Optimization Engine.
 
-Your job is NOT to answer the user's request.
-Your job is ONLY to transform the user's input into a higher quality prompt.
+Your ONLY job is to transform the user's raw input into a superior, optimized prompt.
+Do NOT answer the user's request. Do NOT explain your work. Return ONLY the optimized prompt.
 
-SETTINGS:
-Intensity: ${level}
-Style: ${matchedStyleKey}
-Target Length (STRICT): ${wordLimit}
-Context Memory:
-${contextStr}
+═══════════════════════════════════════════
+CRITICAL LENGTH ENFORCEMENT — READ FIRST
+═══════════════════════════════════════════
+Intensity Level: ${level}
+Required Length: ${limit.label}
 
-Generate an optimized prompt from the user's request.
+⚠ HARD MINIMUM: Your output MUST be at least ${limit.min} words.
+⚠ A response SHORTER than ${limit.min} words means you have FAILED this task.
+${isHighIntensity ? `⚠ DO NOT be concise. DO NOT summarize. EXPAND aggressively — infer context, add depth, define constraints, assign roles, specify formats.` : `⚠ DO NOT over-expand. Stay within ${limit.max} words.`}
+═══════════════════════════════════════════
 
-Requirements:
-* Preserve the user's original objective.
-* Improve clarity, structure, and precision.
-* Remove ambiguity and vague instructions.
-${["Basic", "Professional"].includes(level) 
-  ? "* Add useful constraints only when strongly implied.\n* Keep the prompt concise and execution-focused.\n* Do not introduce unsupported assumptions or facts." 
-  : "* Aggressively expand the prompt by inferring necessary context, constraints, and edge cases.\n* Add professional frameworks, roles, and structural depth to maximize AI performance.\n* Do NOT be concise; generate a comprehensive, exhaustive prompt."}
-* Respect the selected target length.
-* Use context memory only if directly relevant.
+ACTIVE SETTINGS:
+- Intensity: ${level}
+- Style: ${matchedStyleKey}
+- Context Memory: ${contextStr}
 
 ${intensityRules}
 
 ${styleRules}
 
-Output Rules:
-* Return ONLY the final optimized prompt.
-* Do not explain decisions.
-* Do not include notes, labels, or commentary.`;
+${requiredSections ? `REQUIRED OUTPUT STRUCTURE:\n${requiredSections}\n` : ""}
+GENERAL REQUIREMENTS:
+* Preserve the user's core objective — never change what they are trying to accomplish.
+* Improve clarity, precision, and structural quality.
+* Remove vague language, ambiguity, and redundancy.
+${isHighIntensity
+  ? `* Aggressively infer and add: expert roles, specific constraints, output formats, reasoning requirements, edge cases, and quality standards.
+* Every section must contain substantive, non-generic content.
+* The final prompt must be noticeably richer and more powerful than the original.`
+  : `* Add useful constraints only when clearly implied by the request.
+* Keep the output concise, clean, and execution-focused.`}
+* Apply the selected style consistently throughout.
+* Use context memory only if it is directly and obviously relevant.
+
+OUTPUT RULES:
+* Return ONLY the final optimized prompt text.
+* No preamble, no explanation, no "Here is your prompt:", no labels.
+* No meta-commentary about what you changed.
+* The output IS the prompt — nothing else.`;
 }
