@@ -143,8 +143,7 @@ export const POST = withMetrics(async (request: Request) => {
         const mappedLevel = normalizeLevel(body.level);
         const mappedMode = normalizeMode(resolvedMode);
 
-        // Use supabaseAdmin instead of supabaseUserClient to bypass RLS
-        await supabaseAdmin.from('PromptHistory').insert([{
+        const payload = {
           id: crypto.randomUUID(),
           userId: user.id,
           originalPrompt: body.text,
@@ -153,7 +152,30 @@ export const POST = withMetrics(async (request: Request) => {
           promptMode: mappedMode,
           rewriteLevel: mappedLevel,
           responseTime,
-        }]).throwOnError();
+        };
+
+        const { error } = await supabaseAdmin.from('PromptHistory').insert([payload]);
+        if (error) {
+          console.warn('[Promptly] PromptHistory insert failed. Trying fallback mapping...', error.message);
+          
+          const fallbackLevels: Record<string, string> = {
+            BASIC: 'LIGHT',
+            PROFESSIONAL: 'MEDIUM',
+            STAFF_PLUS: 'AGGRESSIVE',
+            RESEARCH: 'EXPERT',
+            PRODUCTION_AUDIT: 'EXPERT'
+          };
+          
+          if (fallbackLevels[mappedLevel]) {
+            payload.rewriteLevel = fallbackLevels[mappedLevel];
+            const { error: retryError } = await supabaseAdmin.from('PromptHistory').insert([payload]);
+            if (retryError) {
+              throw new Error(`Fallback insert failed: ${retryError.message}`);
+            }
+          } else {
+            throw error;
+          }
+        }
       };
 
       // Always save — extension no longer sends clientWillSync:true

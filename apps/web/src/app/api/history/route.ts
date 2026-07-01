@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     const promptMode = MODE_MAP[rawMode] ?? null;
     const rewriteLevel = LEVEL_MAP[rawLevel] ?? null;
 
-    const { data, error: insertError } = await adminClient.from('PromptHistory').insert({
+    const payload = {
       id: crypto.randomUUID(),
       userId: user.id,
       originalPrompt: body.originalPrompt,
@@ -121,9 +121,30 @@ export async function POST(request: Request) {
       rewriteLevel,
       responseTime: Number(body.responseTime) || null,
       isStarred: false
-    }).select('id').single();
+    };
+
+    let { data, error: insertError } = await adminClient.from('PromptHistory').insert(payload).select('id').single();
 
     if (insertError) {
+      console.warn("[Promptly] Synced insert failed. Trying fallback mapping...", insertError.message);
+      
+      const fallbackLevels: Record<string, string> = {
+        BASIC: 'LIGHT',
+        PROFESSIONAL: 'MEDIUM',
+        STAFF_PLUS: 'AGGRESSIVE',
+        RESEARCH: 'EXPERT',
+        PRODUCTION_AUDIT: 'EXPERT'
+      };
+
+      if (rewriteLevel && fallbackLevels[rewriteLevel]) {
+        payload.rewriteLevel = fallbackLevels[rewriteLevel];
+        const retryResult = await adminClient.from('PromptHistory').insert(payload).select('id').single();
+        data = retryResult.data;
+        insertError = retryResult.error;
+      }
+    }
+
+    if (insertError || !data) {
       console.error("Supabase Insert Error:", insertError);
       return NextResponse.json({ error: "Failed to save entry. Please try again." }, { status: 500 });
     }

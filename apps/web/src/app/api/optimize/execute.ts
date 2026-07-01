@@ -1,5 +1,35 @@
-import { getLevelConfig } from '@promptly/prompt-engine';
 import { makeGeminiCall } from '@/services/ai';
+
+const LEVEL_CONFIGS: Record<string, { temperature: number; maxOutputTokens: number }> = {
+  "Basic": {
+    temperature: 0.3,
+    maxOutputTokens: 400,       // ~300 words
+  },
+  "Professional": {
+    temperature: 0.5,
+    maxOutputTokens: 900,       // ~675 words
+  },
+  "Staff+": {
+    temperature: 0.65,
+    maxOutputTokens: 2000,      // ~1500 words — comprehensive mega-prompt
+  },
+  "Research": {
+    temperature: 0.65,
+    maxOutputTokens: 2800,      // ~2100 words — deep research brief
+  },
+  "Production Audit": {
+    temperature: 0.7,
+    maxOutputTokens: 3500,      // ~2600 words — maximum depth audit framework
+  },
+};
+
+function getLocalLevelConfig(level: string) {
+  const config = LEVEL_CONFIGS[level];
+  if (config) {
+    return { temperature: config.temperature, maxOutputTokens: config.maxOutputTokens };
+  }
+  return { temperature: 0.6, maxOutputTokens: 2000 };
+}
 
 export async function executeOptimization(
   systemPrompt: string,
@@ -18,7 +48,7 @@ export async function executeOptimization(
     systemPrompt,
     userPrompt,
     stream,
-    getLevelConfig(level, false),
+    getLocalLevelConfig(level),
     activeApiKey,
     signal
   );

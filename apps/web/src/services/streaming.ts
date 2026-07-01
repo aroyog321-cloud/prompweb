@@ -109,7 +109,7 @@ export function createOpenAIStream(response: Response, context?: StreamContext) 
       const cleanText = accumulatedText.trim();
 
       try {
-        const { error } = await context.supabase.from('PromptHistory').insert([{
+        const payload = {
           id:               crypto.randomUUID(),
           userId:           context.user.id,
           originalPrompt:  context.body.text,
@@ -118,10 +118,30 @@ export function createOpenAIStream(response: Response, context?: StreamContext) 
           promptMode:      dbMode,
           rewriteLevel:    dbLevel,
           responseTime,
-        }]);
+        };
+
+        const { error } = await context.supabase.from('PromptHistory').insert([payload]);
 
         if (error) {
-          console.error('[Promptly] PromptHistory stream-flush insert failed:', error.message, { dbLevel, dbMode });
+          console.warn('[Promptly] PromptHistory stream-flush insert failed. Trying fallback mapping...', error.message);
+          
+          const fallbackLevels: Record<string, string> = {
+            BASIC: 'LIGHT',
+            PROFESSIONAL: 'MEDIUM',
+            STAFF_PLUS: 'AGGRESSIVE',
+            RESEARCH: 'EXPERT',
+            PRODUCTION_AUDIT: 'EXPERT'
+          };
+          
+          if (fallbackLevels[dbLevel]) {
+            payload.rewriteLevel = fallbackLevels[dbLevel];
+            const { error: retryError } = await context.supabase.from('PromptHistory').insert([payload]);
+            if (retryError) {
+              console.error('[Promptly] PromptHistory stream-flush retry failed:', retryError.message);
+            }
+          } else {
+            console.error('[Promptly] PromptHistory stream-flush original error:', error.message);
+          }
         }
       } catch (e) {
         console.error('[Promptly] PromptHistory stream-flush exception:', e);
