@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const maxDuration = 60; // Allow up to 60 seconds for long prompt generation on Vercel Hobby plan
+export const runtime = 'edge'; // Use Edge Runtime to bypass 10-second serverless timeouts on Hobby plan
 
 import type { OptimizeResponse, PromptMode } from '@promptly/types';
 import { buildSystemPrompt, buildUserPrompt, localOptimize } from '@promptly/prompt-engine';
