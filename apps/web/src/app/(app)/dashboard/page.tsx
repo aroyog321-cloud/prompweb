@@ -410,7 +410,7 @@ export default function DashboardPage() {
                   
                   <div className="flex items-center gap-4 shrink-0">
                     <div className="text-right hidden sm:block">
-                      <p className="text-xs font-medium text-zinc-300">{prompt.responseTime ? `${(prompt.responseTime * 1000).toFixed(0)}ms` : '--'}</p>
+                      <p className="text-xs font-medium text-zinc-300">{prompt.responseTime ? `${(prompt.responseTime * 1000).toFixed(0)}ms` : 'Local'}</p>
                     </div>
                     
                     {/* Three-dot menu */}

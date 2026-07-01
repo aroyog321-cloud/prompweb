@@ -267,7 +267,7 @@ export default function HistoryPage() {
 
                     {/* Latency */}
                     <div className="hidden sm:block text-right w-16 shrink-0">
-                      <p className="text-xs font-semibold text-white">{prompt.responseTime ? `${(prompt.responseTime * 1000).toFixed(0)}ms` : '—'}</p>
+                      <p className="text-xs font-semibold text-white">{prompt.responseTime ? `${(prompt.responseTime * 1000).toFixed(0)}ms` : 'Local'}</p>
                       <p className="text-[10px] text-zinc-600 mt-0.5">{timeAgo(prompt.createdAt)}</p>
                     </div>
 
