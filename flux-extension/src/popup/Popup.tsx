@@ -177,40 +177,55 @@ export const Popup: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Your Plan</h2>
                 <span className="text-[10px] font-semibold bg-[var(--surface-floating)] border border-[var(--border-subtle)] px-2 py-0.5 rounded text-[var(--text-secondary)]">
-                  {apiPlanData?.tier?.toUpperCase() || "FREE"}
+                  {apiPlanData?.tier?.toUpperCase() || (settings.accessToken ? "FREE" : "NOT LOGGED IN")}
                 </span>
               </div>
-              <div className="promptly-card p-3.5 space-y-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-transparent"></div>
-                <div className="flex justify-between items-end">
-                  <p className="text-[12px] font-medium text-[var(--text-primary)]">
-                    {apiPlanData?.tier?.toLowerCase() === 'expert' ? (
-                      <>{apiPlanData?.total_requests_today || 0} <span className="text-[var(--text-tertiary)]">optimizations (Unlimited)</span></>
-                    ) : (
-                      <>{apiPlanData?.total_requests_today || 0} <span className="text-[var(--text-tertiary)]">/ {apiPlanData?.tier?.toLowerCase() === 'pro' ? '50' : '10'} optimizations</span></>
-                    )}
+              {!settings.accessToken ? (
+                <div className="promptly-card p-3.5 space-y-3 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-indigo-500/40 via-purple-500/40 to-transparent" />
+                  <p className="text-[12px] text-[var(--text-secondary)] leading-relaxed">
+                    Sign in to start optimizing prompts. Your usage and history are saved to your account.
                   </p>
+                  <button
+                    onClick={() => window.open(`${settings.apiBaseUrl}/login`, "_blank")}
+                    className="w-full bg-indigo-600 text-white font-semibold text-[11px] py-2 rounded-md hover:bg-indigo-500 transition-colors"
+                  >
+                    Sign In to Proenpt →
+                  </button>
                 </div>
-                {apiPlanData?.tier?.toLowerCase() !== 'expert' && (
-                    <div className="h-1.5 w-full bg-[var(--surface-base)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
-                      <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={{ width: `${Math.min(100, Math.round(((apiPlanData?.total_requests_today || 0) / (apiPlanData?.tier?.toLowerCase() === 'pro' ? 50 : 10)) * 100))}%` }}></div>
-                    </div>
-                )}
-                {apiPlanData?.tier?.toLowerCase() !== 'expert' && (
-                  <button 
-                    onClick={() => window.open(`${settings.apiBaseUrl}/dashboard`, "_blank")}
-                    className="w-full mt-2 bg-[var(--text-primary)] text-[var(--surface-base)] font-semibold text-[11px] py-2 rounded-md hover:opacity-90 transition-opacity">
-                    Upgrade Plan
-                  </button>
-                )}
-                {apiPlanData?.tier?.toLowerCase() === 'expert' && (
-                  <button 
-                    onClick={() => window.open(`${settings.apiBaseUrl}/dashboard`, "_blank")}
-                    className="w-full mt-2 bg-[var(--surface-floating)] border border-[var(--border-subtle)] text-[var(--text-secondary)] font-semibold text-[11px] py-2 rounded-md hover:text-[var(--text-primary)] transition-colors">
-                    Manage Plan
-                  </button>
-                )}
-              </div>
+              ) : (
+                <div className="promptly-card p-3.5 space-y-3 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-cyan-500/30 via-purple-500/30 to-transparent"></div>
+                  <div className="flex justify-between items-end">
+                    <p className="text-[12px] font-medium text-[var(--text-primary)]">
+                      {apiPlanData?.tier?.toLowerCase() === 'expert' ? (
+                        <>{apiPlanData?.total_requests_today || 0} <span className="text-[var(--text-tertiary)]">optimizations (Unlimited)</span></>
+                      ) : (
+                        <>{apiPlanData?.total_requests_today || 0} <span className="text-[var(--text-tertiary)]">/ {apiPlanData?.tier?.toLowerCase() === 'pro' ? '50' : '10'} optimizations</span></>
+                      )}
+                    </p>
+                  </div>
+                  {apiPlanData?.tier?.toLowerCase() !== 'expert' && (
+                      <div className="h-1.5 w-full bg-[var(--surface-base)] rounded-full overflow-hidden border border-[var(--border-subtle)]">
+                        <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full" style={{ width: `${Math.min(100, Math.round(((apiPlanData?.total_requests_today || 0) / (apiPlanData?.tier?.toLowerCase() === 'pro' ? 50 : 10)) * 100))}%` }}></div>
+                      </div>
+                  )}
+                  {apiPlanData?.tier?.toLowerCase() !== 'expert' && (
+                    <button 
+                      onClick={() => window.open(`${settings.apiBaseUrl}/dashboard`, "_blank")}
+                      className="w-full mt-2 bg-[var(--text-primary)] text-[var(--surface-base)] font-semibold text-[11px] py-2 rounded-md hover:opacity-90 transition-opacity">
+                      Upgrade Plan
+                    </button>
+                  )}
+                  {apiPlanData?.tier?.toLowerCase() === 'expert' && (
+                    <button 
+                      onClick={() => window.open(`${settings.apiBaseUrl}/dashboard`, "_blank")}
+                      className="w-full mt-2 bg-[var(--surface-floating)] border border-[var(--border-subtle)] text-[var(--text-secondary)] font-semibold text-[11px] py-2 rounded-md hover:text-[var(--text-primary)] transition-colors">
+                      Manage Plan
+                    </button>
+                  )}
+                </div>
+              )}
             </section>
           </div>
         )}

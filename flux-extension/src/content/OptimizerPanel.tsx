@@ -189,17 +189,14 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
           setIsOptimizing(false);
           setIsStreaming(true);
           streamedText += chunk;
-          // Strip footer live so it never flashes on screen
-          const displayText = streamedText.split(/\n---\n/)[0];
-          setOptimizedText(displayText);
+          setOptimizedText(streamedText);
         },
         abortSignal: abortControllerRef.current.signal
       });
 
       setIsOptimizing(false);
       setIsStreaming(false);
-      // Use server-extracted clean prompt; fall back to locally stripped stream
-      const cleanOptimized = result.optimized ? result.optimized.split(/\n---\n/)[0].trim() : streamedText.split(/\n---\n/)[0].trim();
+      const cleanOptimized = (result.optimized || streamedText).trim();
       history.add({
         text,
         optimized: cleanOptimized,
@@ -367,15 +364,26 @@ export const OptimizerPanel: React.FC<Props> = ({ initialText, onReplace, onClos
         )}
 
         {error && (
-          <div className="promptly-error" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, background: 'var(--accent-error)', color: '#fff', borderRadius: 6, fontSize: 13 }}>
-            <div style={{ fontWeight: 600 }}>Optimization Failed</div>
-            <div style={{ opacity: 0.9 }}>
-              {error.includes("Extension context invalidated") 
-                ? "The extension was updated or reloaded. Please refresh the page to continue."
+          <div className="promptly-error" style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12, background: error.includes('401') ? 'rgba(99,102,241,0.15)' : 'var(--accent-error)', color: error.includes('401') ? 'var(--fg)' : '#fff', borderRadius: 8, fontSize: 13, border: error.includes('401') ? '1px solid rgba(99,102,241,0.35)' : 'none' }}>
+            <div style={{ fontWeight: 600, fontSize: 14 }}>
+              {error.includes('401') ? '🔐 Login Required' : 'Optimization Failed'}
+            </div>
+            <div style={{ opacity: 0.85, lineHeight: 1.5 }}>
+              {error.includes('401')
+                ? 'You need to be logged in to use Proenpt. Please sign in at proenpt.vercel.app to continue.'
+                : error.includes('Extension context invalidated')
+                ? 'The extension was updated or reloaded. Please refresh the page to continue.'
                 : error}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-              {error.includes("Extension context invalidated") ? (
+              {error.includes('401') ? (
+                <button
+                  onClick={() => window.open(`${settings?.apiBaseUrl?.replace(/\/$/, '') || 'https://proenpt.vercel.app'}/login`, '_blank')}
+                  style={{ background: 'rgba(99,102,241,0.85)', border: 'none', color: '#fff', padding: '5px 12px', borderRadius: 5, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                >
+                  Sign In →
+                </button>
+              ) : error.includes('Extension context invalidated') ? (
                 <button 
                   onClick={() => window.location.reload()}
                   style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: 4, cursor: 'pointer', fontSize: 12, fontWeight: 500 }}
